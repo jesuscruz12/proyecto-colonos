@@ -1,0 +1,87 @@
+<div class="page-content">
+    <div class="container-fluid">
+        <!-- start page title -->
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-flex align-items-center justify-content-between">
+                    <h4 class="mb-0 font-size-18">Usuarios Globales</h4>
+                </div>
+            </div>
+        </div>
+        <!-- end page title -->
+        <div class="row contenido-tb">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <table id="recursos-table" class="table table-striped table-bordered dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th>Id</th>
+                                    <th>Nombre</th>
+                                    <th>Correo</th>
+                                    <th>Teléfono</th>
+                                    <th>Tipo Usuario</th>
+                                    <th>Razón Social</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- end row -->
+    </div> <!-- container-fluid -->
+</div>
+<!-- End Page-content -->
+
+<div class="modal fade" id="editar-recurso" tabindex="-1" role="dialog" aria-labelledby="myExtraLargeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title mt-0">Editar</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form role="form" method="post" id="frm_editar" class="custom-validation">
+                <div class="modal-body">
+                    <div class="row">
+
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="control-label">ID</label>
+                                <input readonly name="cv_usuario" id="cv_usuario" class="form-control text-center" type="text" placeholder="CV SIM" required="">
+                            </div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="control-label">Usuario</label>
+                                <input readonly name="usuario" id="usuario" class="form-control" type="text" placeholder="Usuario" required="">
+                            </div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="control-label">Contraseña (cambiar opcional)</label>
+                                <input name="password" id="password" class="form-control" type="password" placeholder="Contraseña" required="">
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="spinner-border text-success" role="status" style="display: none">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <button type="button" class="btn btn-secondary waves-effect" data-dismiss="modal">Cerrar</button>
+                    <button type="submit" class="btn btn-success waves-effect waves-light" id="editar_ajax">Guardar</button>
+                </div>
+            </form>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->

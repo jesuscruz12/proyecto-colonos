@@ -1,0 +1,10 @@
+/application/Config.php
+.vscode
+.env
+node_modules
+.windsurf/rules/
+
+
+
+
+.DS_Store
