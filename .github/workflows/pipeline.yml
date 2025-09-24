@@ -1,0 +1,31 @@
+name: Deploy to EC2 CRMTuOperador
+
+on:
+  push:
+    branches:
+      - main  # O la rama que uses para producción
+      - dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY_DIR: ${{ github.ref == 'refs/heads/main' && '/var/www/crm-emp' || '/var/www/crm-emp-qa' }}
+      
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ${{ env.DEPLOY_DIR}} || { echo "ERROR: No se puede acceder a /var/www/crm-emp o /var/www/crm-emp-qa"; exit 1; }
+            echo "Directorio actual: $(pwd)"
+            ls -la
+            # git pull origin ${{ github.ref_name }}
+            # sudo systemctl restart apache2
