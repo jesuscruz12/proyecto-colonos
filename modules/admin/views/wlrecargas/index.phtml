@@ -1,0 +1,376 @@
+<main class="app-main page-recargas">
+  <!-- ======= Encabezado ======= -->
+  <div class="app-content-header">
+    <div class="container-fluid">
+
+      <!-- Título + migas -->
+      <div class="row align-items-center">
+        <div class="col-sm-6">
+          <h3 class="mb-0">Recargas</h3>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-end mb-0">
+            <li class="breadcrumb-item"><a href="<?php echo BASE_URL; ?>">Inicio</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Recargas</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- Toolbar de fechas para KPIs (sin "Mes actual") -->
+      <div class="row mt-2">
+        <div class="col-12">
+          <form id="frm_rango_kpi" class="row g-2 align-items-center justify-content-start justify-content-lg-end">
+            <div class="col-auto">
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+                <input type="date" class="form-control" id="kpi_desde" aria-label="Desde">
+              </div>
+            </div>
+            <div class="col-auto">
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+                <input type="date" class="form-control" id="kpi_hasta" aria-label="Hasta">
+              </div>
+            </div>
+            <div class="col-auto">
+              <button type="button" id="btn_kpi_aplicar" class="btn btn-primary">
+                <i class="bi bi-check2-circle me-1"></i> Aplicar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======= Contenido ======= -->
+  <div class="app-content">
+    <div class="container-fluid">
+
+      <!-- KPIs con AdminLTE info-box -->
+      <div class="row g-3">
+        <div class="col-12 col-sm-6 col-xl-3">
+          <div class="info-box shadow-sm">
+            <span class="info-box-icon bg-primary"><i class="bi bi-reception-4"></i></span>
+            <div class="info-box-content">
+              <span class="info-box-text text-muted">Total recargas</span>
+              <span class="info-box-number fs-5 fw-semibold" id="kpi_total">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+          <div class="info-box shadow-sm">
+            <span class="info-box-icon bg-success"><i class="bi bi-currency-dollar"></i></span>
+            <div class="info-box-content">
+              <span class="info-box-text text-muted">Saldo consumido</span>
+              <span class="info-box-number fs-5 fw-semibold" id="kpi_consumido">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+          <div class="info-box shadow-sm">
+            <span class="info-box-icon bg-info"><i class="bi bi-phone"></i></span>
+            <div class="info-box-content">
+              <span class="info-box-text text-muted">Números únicos</span>
+              <span class="info-box-number fs-5 fw-semibold" id="kpi_unicos">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+          <div class="info-box shadow-sm">
+            <span class="info-box-icon bg-warning"><i class="bi bi-calendar-week"></i></span>
+            <div class="info-box-content">
+              <span class="info-box-text text-muted">Última recarga</span>
+              <span class="info-box-number fs-6 fw-semibold" id="kpi_ultima">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtros -->
+      <div class="card mt-3">
+        <div class="card-header">
+          <h3 class="card-title mb-0"><i class="bi bi-funnel me-1"></i> Filtros</h3>
+        </div>
+
+        <div class="card-body">
+      <form id="frm_filtros" class="row g-3">
+  <!-- Número -->
+  <div class="col-12 col-lg-3">
+    <label for="f_numero" class="form-label">Número</label>
+    <div class="input-group">
+      <span class="input-group-text"><i class="bi bi-phone"></i></span>
+      <input
+        type="text"
+        class="form-control input-numeric"
+        id="f_numero"
+        placeholder="Ej. 5512345678"
+        inputmode="numeric"
+        pattern="[0-9]{10}"
+        maxlength="10"
+        minlength="10">
+    </div>
+    <div class="form-text text-muted">Exactamente 10 dígitos</div>
+  </div>
+
+  <!-- Desde -->
+  <div class="col-6 col-lg-2">
+    <label for="f_desde" class="form-label">Desde</label>
+    <div class="input-group">
+      <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+      <input type="date" class="form-control" id="f_desde">
+    </div>
+    <div class="form-text">&nbsp;</div>
+  </div>
+
+  <!-- Hasta -->
+  <div class="col-6 col-lg-2">
+    <label for="f_hasta" class="form-label">Hasta</label>
+    <div class="input-group">
+      <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+      <input type="date" class="form-control" id="f_hasta">
+    </div>
+    <div class="form-text">&nbsp;</div>
+  </div>
+
+  <!-- Canal -->
+  <div class="col-6 col-lg-2">
+    <label for="f_canal" class="form-label">Canal</label>
+    <select id="f_canal" class="form-select">
+      <option value="">Todos</option>
+      <option value="NORMAL">NORMAL</option>
+      <option value="BANCARIO">BANCARIO</option>
+      <option value="WEB">WEB</option>
+    </select>
+    <div class="form-text">&nbsp;</div>
+  </div>
+
+  <!-- Botón Buscar (misma “altura” que los campos) -->
+  <div class="col-6 col-lg-auto">
+    <!-- label vacío para igualar la línea superior -->
+    <label class="form-label d-none d-lg-block">&nbsp;</label>
+    <button
+      type="button"
+      id="btn_aplicar_filtros"
+      class="btn btn-primary w-100 w-lg-auto"
+      data-bs-toggle="tooltip"
+      title="Aplicar filtros">
+      <i class="bi bi-search me-1"></i> Buscar
+    </button>
+    <div class="form-text d-none d-lg-block">&nbsp;</div>
+  </div>
+</form>
+        </div>
+      </div>
+
+      <!-- Listado -->
+      <div class="card">
+        <div class="card-header d-flex align-items-center">
+          <h3 class="card-title mb-0"><i class="bi bi-table me-1"></i> Listado</h3>
+
+          <div class="ms-auto d-flex gap-2">
+            <button class="btn btn-outline-secondary btn-sm" id="btn_recargar"
+              data-bs-toggle="tooltip" title="Limpiar filtros y recargar datos">
+              <i class="bi bi-arrow-repeat"></i>
+            </button>
+
+            <?php if (Session::get('rol') == ADMINISTRADOR || (Session::get('permisos')['recargas.crear'] ?? false)) : ?>
+              <button class="btn btn-primary btn-sm extend-new-recurso" data-bs-toggle="modal" data-bs-target="#modal-crear">
+                <i class="fas fa-plus-circle me-1"></i> Nuevo
+              </button>
+            <?php endif; ?>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="table-responsive">
+            <table id="recursos-table" class="table table-striped table-bordered w-100 align-middle">
+              <thead>
+                <tr class="align-middle">
+                  <th>#</th>
+                  <th>Número</th>
+                  <th>Plan</th>
+                  <th>Fecha</th>
+                  <th>Saldo</th>
+                  <th>SIM</th>
+                  <th>ICCID</th>
+                  <th>Canal</th>
+                  <th style="width:120px;" class="dt-actions">Acciones</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+              <tfoot>
+                <tr>
+                  <th></th>
+                  <th>Número</th>
+                  <th>Plan</th>
+                  <th>Fecha</th>
+                  <th>Saldo</th>
+                  <th>SIM</th>
+                  <th>ICCID</th>
+                  <th>Canal</th>
+                  <th></th>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <div class="small text-muted mt-2">
+            Tip: usa la caja “Buscar” o los filtros de arriba. Mantén <kbd>Shift</kbd> para ordenar por múltiples columnas.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- ======= Modal: CREAR ======= -->
+<div class="modal fade" id="modal-crear" tabindex="-1" aria-labelledby="crearModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered mx-auto">
+    <div class="modal-content border-0 shadow">
+      <form id="frm_nuevo" method="post" class="m-0">
+        <div class="card card-primary card-outline mb-0">
+          <div class="card-header">
+            <h5 class="card-title mb-0" id="crearModalLabel">
+              <i class="bi bi-plus-circle me-1"></i> Crear recarga
+            </h5>
+            <button type="button" class="btn btn-sm btn-outline-secondary float-end" data-bs-dismiss="modal">Cerrar</button>
+          </div>
+
+          <div class="card-body">
+            <input type="hidden" name="csrf_token" value="<?php echo Session::get('tokencsrf'); ?>">
+
+            <div class="row g-3">
+              <div class="col-12 col-md-6">
+                <label for="numero_telefono" class="form-label">Número teléfono</label>
+                <input type="text" class="form-control input-numeric" name="numero_telefono" id="numero_telefono"
+                  required inputmode="numeric" pattern="[0-9]{10}" maxlength="10" minlength="10" placeholder="Ej. 5512345678">
+                <div class="form-text">Debe tener exactamente 10 dígitos.</div>
+              </div>
+
+              <div class="col-6 col-md-3">
+                <label for="cv_plan" class="form-label">Plan (cv_plan)</label>
+                <input type="number" class="form-control input-numeric" name="cv_plan" id="cv_plan" required min="1" step="1">
+              </div>
+
+              <div class="col-6 col-md-3">
+                <label for="cv_sim" class="form-label">cv_sim</label>
+                <input type="number" class="form-control input-numeric" name="cv_sim" id="cv_sim" min="0" step="1">
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label for="iccid" class="form-label">ICCID</label>
+                <input type="text" class="form-control" name="iccid" id="iccid" maxlength="30" placeholder="Opcional">
+              </div>
+
+              <div class="col-6 col-md-3">
+                <label for="canal_venta" class="form-label">Canal</label>
+                <select class="form-select" name="canal_venta" id="canal_venta">
+                  <option value="NORMAL" selected>NORMAL</option>
+                  <option value="BANCARIO">BANCARIO</option>
+                  <option value="WEB">WEB</option>
+                </select>
+              </div>
+
+              <div class="col-6 col-md-3">
+                <label for="saldo_consumido" class="form-label">Saldo consumido</label>
+                <input type="text" class="form-control" name="saldo_consumido" id="saldo_consumido" maxlength="100" placeholder="Ej. 50.00">
+              </div>
+            </div>
+
+            <div class="text-center mt-3">
+              <div class="spinner-border text-primary" role="status" style="display:none;">
+                <span class="visually-hidden">Procesando...</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-save me-1"></i> Guardar
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ======= Modal: EDITAR ======= -->
+<div class="modal fade" id="modal-editar" tabindex="-1" aria-labelledby="editarModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered mx-auto">
+    <div class="modal-content border-0 shadow">
+      <form id="frm_editar" method="post" class="m-0">
+        <div class="card card-warning card-outline mb-0">
+          <div class="card-header">
+            <h5 class="card-title mb-0" id="editarModalLabel">
+              <i class="bi bi-pencil-square me-1"></i> Editar recarga
+            </h5>
+            <button type="button" class="btn btn-sm btn-outline-secondary float-end" data-bs-dismiss="modal">Cerrar</button>
+          </div>
+
+          <div class="card-body">
+            <input type="hidden" name="csrf_token" value="<?php echo Session::get('tokencsrf'); ?>">
+            <input type="hidden" name="cv_recarga" id="cv_recarga_editar">
+
+            <div class="row g-3">
+              <div class="col-12 col-md-6">
+                <label for="numero_telefono_editar" class="form-label">Número teléfono</label>
+                <input type="text" class="form-control input-numeric" name="numero_telefono" id="numero_telefono_editar"
+                  required inputmode="numeric" pattern="[0-9]{10}" maxlength="10" minlength="10">
+                <div class="form-text">Debe tener exactamente 10 dígitos.</div>
+              </div>
+
+              <div class="col-6 col-md-3">
+                <label for="cv_plan_editar" class="form-label">Plan (cv_plan)</label>
+                <input type="number" class="form-control input-numeric" name="cv_plan" id="cv_plan_editar" required min="1" step="1">
+              </div>
+
+              <div class="col-6 col-md-3">
+                <label for="cv_sim_editar" class="form-label">cv_sim</label>
+                <input type="number" class="form-control input-numeric" name="cv_sim" id="cv_sim_editar" min="0" step="1">
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label for="iccid_editar" class="form-label">ICCID</label>
+                <input type="text" class="form-control" name="iccid" id="iccid_editar" maxlength="30">
+              </div>
+
+              <div class="col-6 col-md-3">
+                <label for="canal_venta_editar" class="form-label">Canal</label>
+                <select class="form-select" name="canal_venta" id="canal_venta_editar">
+                  <option value="NORMAL">NORMAL</option>
+                  <option value="BANCARIO">BANCARIO</option>
+                  <option value="WEB">WEB</option>
+                </select>
+              </div>
+
+              <div class="col-6 col-md-3">
+                <label for="saldo_consumido_editar" class="form-label">Saldo consumido</label>
+                <input type="text" class="form-control" name="saldo_consumido" id="saldo_consumido_editar" maxlength="100">
+              </div>
+            </div>
+
+            <div class="text-center mt-3">
+              <div class="spinner-border text-warning" role="status" style="display:none;">
+                <span class="visually-hidden">Procesando...</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-warning">
+              <i class="bi bi-check2-square me-1"></i> Actualizar
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,100 @@
+/* ==========================================================================
+   GLOBAL.CSS – Estilos propios
+   --------------------------------------------------------------------------
+   Uso:
+   1) Ajustes menores sin tocar librerías (Bootstrap/AdminLTE).
+   2) Utilidades pequeñas y seguras.
+   3) Estilos por página usando prefijo .page-<vista>.
+   ========================================================================== */
+
+
+/* ==========================================================================
+   A) UTILIDADES GENERALES (site-wide)
+   ========================================================================== */
+
+/* Addon de inputs dentro de cards: fondo suave */
+.card .input-group-text {
+  background-color: #f8f9fa;
+  /* border-color: var(--bs-border-color);  // opcional */
+}
+
+/* Quitar flechas a <input type="number"> (consistencia visual) */
+.input-numeric::-webkit-outer-spin-button,
+.input-numeric::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.input-numeric { appearance: textfield; } /* Firefox */
+
+/* Enfasis de foco en inputs/selects dentro de cards */
+.card .form-control:focus,
+.card .form-select:focus {
+  box-shadow: 0 0 0 0.2rem rgba(13,110,253,.15);
+}
+
+
+/* ==========================================================================
+   B) ESTILOS POR PÁGINA
+   ========================================================================== */
+
+/* --- Página: Recargas ---------------------------------------------------- */
+.page-recargas .filter-help {        /* altura uniforme del texto de ayuda */
+  min-height: 1.25rem;
+}
+.page-recargas .card.border-soft {   /* borde sutil opcional en filtros */
+  border: 1px solid rgba(13,110,253,.25);
+}
+
+/* --- Página: WLSIMs -------------------------------------------------------- */
+.page-wlsims .filter-help {            /* altura uniforme del texto de ayuda */
+  min-height: 1.25rem;
+}
+
+/* Botón Buscar (filtros) — altura/alineación consistente */
+.page-wlsims .btn-search {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+.page-wlsims .btn-search i {           /* centrar icono con texto */
+  vertical-align: -0.125rem;
+}
+
+/* Input-group de fechas en la toolbar de KPIs */
+.page-wlsims .kpi-range .input-group-text {
+  background-color: #f8f9fa;
+}
+
+/* Centrar y alinear la columna de acciones en SIMs (por si no aplica global) */
+.page-wlsims .table .dt-actions {
+  text-align: center;
+  vertical-align: middle;
+}
+
+
+
+
+/* ==========================================================================
+   C) TWEAKS GENERALES DE COMPONENTES
+   ========================================================================== */
+
+/* DataTables: col de acciones centrada */
+.table .dt-actions,
+.dataTable td:last-child {
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* Modales: evitar salto por márgenes extra */
+.modal .card { margin-bottom: 0; }
+
+/* Botones pequeños de toolbars con altura compacta */
+.card .btn.btn-sm { line-height: 1.2; }
+
+
+/* ==========================================================================
+   D) ZONA DE PRUEBAS (mover lo definitivo a su sección)
+   ========================================================================== */
+
+/* .sandbox { outline: 1px dashed red; } */
+
+/* ==== FIN GLOBAL.CSS ==== */

@@ -4,120 +4,146 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 
 class indexController extends Controller
 {
-     //private $_administradores;
-     private $_usuarios;
-     private $_wlempresas;
-     private $_wl_usuarioscrm;
+    private $_usuarios;        // Modelo wl_usuarioscrm (tabla de usuarios que hacen login)
+    private $_wlempresas;
+    private $_wl_usuarioscrm;
 
-     public function __construct()
-     {
-          parent::__construct();
-          //$this->_administradores = $this->loadModel('administradores');
-          $this->_usuarios = $this->loadModel('usuarios');
-          $this->_wlempresas = $this->loadModel('wlempresas');
-          $this->_wl_usuarioscrm = $this->loadModel('wl_usuarioscrm');
-     }
+    public function __construct()
+    {
+        parent::__construct();
+        $this->_usuarios       = $this->loadModel('usuarios');         // si lo usas en otros lados
+        $this->_wlempresas     = $this->loadModel('wlempresas');       // opcional
+        $this->_wl_usuarioscrm = $this->loadModel('wl_usuarioscrm');   // <- importante para login
+    }
 
-     public function index()
-     {
+    /** Render del login + autenticación */
+    public function index()
+    {
+        // Ya autenticado → al panel
+        if (Session::get('autenticado')) {
+            $this->redireccionar('admin');
+        }
 
-          if (Session::get('rol') == ADMINISTRADOR) {
-               $this->redireccionar('admin');
-          }
+        // ¿Enviaron formulario?
+        if ($this->getInt('enviar') == 1) {
+            $email    = trim((string)$this->getPostParam('usuario'));
+            $password = (string)$this->getPostParam('password');
 
-          if ($this->getInt('enviar') == 1) {
-               $this->_view->datos = $_POST;
-               $this->_view->datos['usuario'] = $usuario;
+            // Para repintar el campo usuario si hay error
+            $this->_view->datos = ['usuario' => $email];
 
-               $usuario = $this->getPostParam('usuario');
-               $contrasena = $this->getPostParam('password');
+            // Validaciones básicas
+            if (!$this->validarEmail($email)) {
+                $this->_view->_error = 'Credenciales inválidas';
+                $this->_view->renderizar(['index'], 'ajax'); return;
+            }
+            if ($password === '') {
+                $this->_view->_error = 'Debes ingresar tu contraseña';
+                $this->_view->renderizar(['index'], 'ajax'); return;
+            }
 
-               //validar password			
-               if (!$this->getPostParam('password')) {
-                    $this->_view->_error = 'Debes ingresar tu contraseña';
-                    $vistas = array('index');
-                    $this->_view->renderizar($vistas, "ajax");
-                    exit;
-               }
+            // ===== 1) Traer usuario por email (con password/estatus/rol/cv_wl/ultimo_login)
+            $row = $this->_wl_usuarioscrm->buscarPorEmail($email);
+            if (!$row) {
+                $this->_view->_error = 'Nombre de usuario y / o contraseña incorrectos';
+                $this->_view->renderizar(['index'], 'ajax'); return;
+            }
 
-               //validar correo
-               if (!$this->validarEmail($usuario)) {
-                    $this->_view->_error = 'La dirección de correo electrónico es inválida';
-                    $vistas = array('index');
-                    $this->_view->renderizar($vistas, "ajax");
-                    exit;
+            // Normaliza
+            if (is_object($row)) $row = (array)$row;
 
-                    // $data = 0;
-                    // $password = Hash::getHash('sha1', $this->getPostParam('password'), HASH_KEY);
-                    // $row1 = $this->_wlempresas->verificar_usuario(
-                    //      $encoded
-                    // );
-                    // $ca = count($row1);
-                    // if ($ca > 0) {
-                    //      $data = 1;
-                    // }
-                    // if ($data == 0) {
-                    //      $this->_view->_error = 'Nombre de usuario y / o contraseña incorrectos';
-                    //      $vistas = array('index');
-                    //      $this->_view->renderizar($vistas, "ajax");
-                    //      exit;
-                    // }
+            // Usuario activo
+            if ((int)($row['estatus'] ?? 0) !== 1) {
+                $this->_view->_error = 'Cuenta deshabilitada. Contacta al administrador.';
+                $this->_view->renderizar(['index'], 'ajax'); return;
+            }
 
-                    // Session::set('autenticado', true);
-                    // // Session::set('tipo_usuario', $row1[0]['tipo_usuario']);
-                    // // Session::set('cv_usuario', $row1[0]['cv_usuario']);
-                    // // Session::set('nombre_usuario', $row1[0]['nombre_usuario']);
-                    // Session::set('tiempo', time());
-                    // $op_extra = new CORE;
-                    // $tokenrf = $op_extra->cadena_aleatoria(15);
-                    // Session::set('tokencsrf', $tokenrf);
+            // ===== 2) Verificación de contraseña
+            $stored = (string)($row['password'] ?? '');
+            $ok = false;
 
-                    // // if ($row1[0]['tipo_usuario'] == ADMINISTRADOR) {
-                    // //      $this->redireccionar("admin");
-                    // // }
-                    // $this->redireccionar("admin");
-               } else {
-                    $data = 0;
-                    $password = Hash::getHash('sha1', $contrasena, HASH_KEY);
-                    $row1 = $this->_wl_usuarioscrm->verificar_usuario(
-                         $usuario,
-                         $password
-                    );
-                    // $this->_view->_error = json_encode($row1);
-                    // $vistas = array('index');
-                    // $this->_view->renderizar($vistas, "ajax");
-                    // exit;
-                    $ca = count($row1 ?? []);
-                    if ($ca > 0) {
-                         $data = 1;
-                    }
-                    if ($data == 0) {
-                         $this->_view->_error = 'Nombre de usuario y / o contraseña incorrectos';
-                         $vistas = array('index');
-                         $this->_view->renderizar($vistas, "ajax");
-                         exit;
-                    }
-                    Session::set('autenticado', true);
-                    Session::set('rol', $row1['rol']);
-                    Session::set('id_usuario', $row1['id_usuario']);
-                    Session::set('token_likeapi', $row1['token_likeapi']);
-                    Session::set('tiempo', time());
-                    $op_extra = new CORE;
-                    $tokenrf = $op_extra->cadena_aleatoria(15);
-                    Session::set('tokencsrf', $tokenrf);
+            // a) Hash moderno (bcrypt/argon)
+            if (preg_match('/^\$2[ayb]\$|\$argon2i\$|\$argon2id\$/', $stored)) {
+                $ok = password_verify($password, $stored);
+            } else {
+                // b) Legacy: sha1 + HASH_KEY (compatibilidad)
+                $legacy = Hash::getHash('sha1', $password, HASH_KEY);
+                $ok = hash_equals($legacy, $stored);
+            }
 
-                    if ($row1['rol'] == ADMINISTRADOR) {
-                         $this->redireccionar("admin");
-                    }
-               }
-          }
-          $vistas = array('index');
-          $this->_view->renderizar($vistas, "ajax");
-     }
+            if (!$ok) {
+                $this->_view->_error = 'Nombre de usuario y / o contraseña incorrectos';
+                $this->_view->renderizar(['index'], 'ajax'); return;
+            }
 
-     public function cerrar()
-     {
-          Session::destroy();
-          $this->redireccionar("");
-     }
+            // ===== 3) Auto-upgrade a hash moderno si aún es legacy
+            if (!preg_match('/^\$2[ayb]\$|\$argon2i\$|\$argon2id\$/', $stored)) {
+                try {
+                    $this->_wl_usuarioscrm->actualizarPassword((int)$row['id_usuario'], password_hash($password, PASSWORD_DEFAULT));
+                } catch (\Throwable $e) { /* silencioso */ }
+            }
+
+            // ===== 4) Regenerar ID de sesión (previene fijación de sesión)
+            if (function_exists('session_regenerate_id')) {
+                @session_regenerate_id(true);
+            }
+
+            // ===== 5) Guardar sesión mínima
+            Session::set('autenticado', true);
+            Session::set('id_usuario', (int)$row['id_usuario']);
+            Session::set('rol',        (int)$row['rol']);
+            Session::set('cv_wl',      (int)($row['cv_wl'] ?? 0));
+            Session::set('tiempo',     time());
+
+            Session::set('usuario', [
+                'id_usuario'   => (int)$row['id_usuario'],
+                'nombre'       => (string)($row['nombre'] ?? ''),
+                'email'        => (string)($row['email'] ?? $email),
+                'rol'          => (int)$row['rol'],
+                'cv_wl'        => (int)($row['cv_wl'] ?? 0),
+                'ultimo_login' => (string)($row['ultimo_login'] ?? ''),
+            ]);
+
+            // CSRF para formularios/acciones POST
+            $core = new CORE;
+            Session::set('tokencsrf', $core->cadena_aleatoria(32));
+
+            // ===== 6) Actualizar último login
+            try {
+                $this->_wl_usuarioscrm->actualizarUltimoLogin((int)$row['id_usuario'], date('Y-m-d H:i:s'));
+            } catch (\Throwable $e) { /* silencioso */ }
+
+            // ===== 7) Redirigir (ajusta si tienes rutas por rol)
+            $this->redireccionar('admin');
+            return;
+        }
+
+        // Primera carga o tras error
+        $this->_view->renderizar(['index'], 'ajax');
+    }
+
+    /** Logout seguro: sólo POST y con CSRF válido */
+    public function cerrar()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('HTTP/1.1 405 Method Not Allowed'); die('Método no permitido');
+        }
+
+        $token = (string)$this->getPostParam('csrf_token');
+        $sess  = (string)(Session::get('tokencsrf') ?: '');
+
+        if (!$token || !hash_equals($sess, $token)) {
+            header('HTTP/1.1 419 Authentication Timeout'); die('CSRF inválido');
+        }
+
+        Session::destroy();
+
+        // Opcional: invalidar cookie de sesión
+        if (ini_get('session.use_cookies')) {
+            $p = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000, $p['path'], $p['domain'], $p['secure'], $p['httponly']);
+        }
+
+        $this->redireccionar('');
+    }
 }
