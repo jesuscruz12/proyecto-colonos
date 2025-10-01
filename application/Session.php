@@ -1,19 +1,19 @@
 <?php
 class Session
 {
-    public static function init()
-    {
-        //iniciar sesion 
-        session_set_cookie_params(0, '/', 'localhost');//likephone.mx
-        session_name('crm_session');
-        session_start();
-    }
-
     // public static function init()
     // {
     //     //iniciar sesion 
+    //     session_set_cookie_params(0, '/', 'localhost');//likephone.mx
+    //     session_name('crm_session');
     //     session_start();
     // }
+
+    public static function init()
+    {
+        //iniciar sesion 
+        session_start();
+    }
 
     //metodo para destruir una variable de sesion
     public static function destroy($clave = false)
