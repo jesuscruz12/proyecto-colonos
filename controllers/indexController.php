@@ -114,7 +114,7 @@ class indexController extends Controller
             } catch (\Throwable $e) { /* silencioso */ }
 
             // ===== 7) Redirigir (ajusta si tienes rutas por rol)
-            $this->redireccionar('admin');
+            $this->redireccionar('admin/wlindicadores');
             return;
         }
 
