@@ -203,16 +203,7 @@
                 </ul>
               </li>
 
-              <!-- ===== MÓDULO: USUARIOS===== -->
-              <?php if (Session::get('rol') == ADMINISTRADOR || (Session::get('permisos')['wlusuarios.ver'] ?? false)) : ?>
-                <li class="nav-item">
-                  <a href="<?php echo BASE_URL . 'admin/wlusuarios'; ?>" class="nav-link">
-                    <i class="nav-icon bi bi-speedometer"></i>
-                    <p>Usuarios</p>
-                  </a>
-                </li>
-              <?php endif; ?>
-              <!-- ===== FIN MÓDULO: USUARIOS ===== -->
+            
 
                <!-- ===== MÓDULO: INDICADORES===== -->
               <?php if (Session::get('rol') == ADMINISTRADOR || (Session::get('permisos')['wlindicadores.ver'] ?? false)) : ?>
@@ -235,6 +226,17 @@
                 </li>
               <?php endif; ?>
               <!-- ===== FIN MÓDULO: INVENTARIO SIMS ===== -->
+
+                <!-- ===== MÓDULO: PORTABILIDADES===== -->
+              <?php if (Session::get('rol') == ADMINISTRADOR || (Session::get('permisos')['wlportabilidades.ver'] ?? false)) : ?>
+                <li class="nav-item">
+                  <a href="<?php echo BASE_URL . 'admin/wlportabilidades'; ?>" class="nav-link">
+                    <i class="nav-icon bi bi-speedometer"></i>
+                    <p>Portabilidades</p>
+                  </a>
+                </li>
+              <?php endif; ?>
+              <!-- ===== FIN MÓDULO: PORTABILIDADES ===== -->
 
               <!-- ===== MÓDULO: RECARGAS ===== -->
               <?php if (Session::get('rol') == ADMINISTRADOR || (Session::get('permisos')['wlrecargas.ver'] ?? false)) : ?>
