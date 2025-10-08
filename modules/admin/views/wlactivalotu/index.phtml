@@ -1,0 +1,286 @@
+<?php // Vista principal del wizard ?>
+<main class="app-main page-wlactivalotu">
+  <div class="app-content-header">
+    <div class="container-fluid">
+      <div class="row align-items-center">
+        <div class="col-sm-6">
+          <h3 class="mb-0">Actívalo Tú Mismo</h3>
+          <small class="text-muted">Autoactivación de línea</small>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-end mb-0">
+            <li class="breadcrumb-item"><a href="<?php echo BASE_URL; ?>">Inicio</a></li>
+            <li class="breadcrumb-item active">Actívalo Tú Mismo</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="row mt-3">
+        <div class="col-12">
+          <div class="progress" style="height: 10px;">
+            <div id="wizProgress" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 16%;"></div>
+          </div>
+          <div class="d-flex justify-content-between small mt-1">
+            <span><strong>Paso <span id="wizStepNum">1</span>/6</strong></span>
+            <span id="wizStepName">Cobertura</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="app-content">
+    <div class="container-fluid">
+
+      <!-- Paso 1 -->
+      <div class="card card-outline card-primary wiz-step" data-step="1">
+        <div class="card-header"><h3 class="card-title">1) Verificar cobertura</h3></div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label for="inp_cp" class="form-label">Código Postal</label>
+              <input type="text" id="inp_cp" class="form-control" maxlength="5" inputmode="numeric" pattern="\d{5}" placeholder="Ej. 64000">
+              <div class="form-text">Ingresa 5 dígitos.</div>
+            </div>
+            <div class="col-md-3 align-self-end">
+              <button id="btn_validar_cp" class="btn btn-primary"><i class="fas fa-map-marker-alt me-1"></i> Validar cobertura</button>
+            </div>
+            <div class="col-12"><div id="msg_cp" class="mt-2"></div></div>
+          </div>
+        </div>
+        <div class="card-footer d-flex justify-content-end">
+          <button class="btn btn-secondary" disabled>Atrás</button>
+          <button id="next_from_cp" class="btn btn-primary ms-2" disabled>Siguiente</button>
+        </div>
+      </div>
+
+      <!-- Paso 2 -->
+      <div class="card card-outline card-primary wiz-step d-none" data-step="2">
+        <div class="card-header"><h3 class="card-title">2) Validar IMEI</h3></div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-5">
+              <label for="inp_imei" class="form-label">IMEI</label>
+              <input type="text" id="inp_imei" class="form-control" maxlength="16" inputmode="numeric" pattern="\d{14,16}" placeholder="Marca *#06# para verlo">
+              <div class="form-text">14–16 dígitos. Validaremos Banda 28 y soporte eSIM.</div>
+            </div>
+            <div class="col-md-3 align-self-end">
+              <button id="btn_validar_imei" class="btn btn-primary"><i class="fas fa-mobile-alt me-1"></i> Validar IMEI</button>
+            </div>
+            <div class="col-12"><div id="msg_imei" class="mt-2"></div></div>
+          </div>
+        </div>
+        <div class="card-footer d-flex justify-content-between">
+          <button class="btn btn-outline-secondary btn-prev">Atrás</button>
+          <button id="next_from_imei" class="btn btn-primary" disabled>Siguiente</button>
+        </div>
+      </div>
+
+       <!-- Paso 3 -->
+<div class="card card-outline card-primary wiz-step d-none" data-step="3">
+  <div class="card-header"><h3 class="card-title">3) Seleccionar plan</h3></div>
+  <div class="card-body">
+
+    <!-- Recomendado: mueve esto a tu CSS global; lo dejo inline para que pruebes -->
+    <style>
+      .planes-wrapper{
+        position: relative;
+        overflow: hidden;
+        min-height: 220px;
+      }
+      .planes-wrapper .nav-btn{
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+        width: 36px; height: 36px;
+        display: grid; place-items: center;
+        border-radius: 8px;
+      }
+      .planes-wrapper .nav-left{ left: 4px; }
+      .planes-wrapper .nav-right{ right: 4px; }
+      #planes_scroller{
+        display: flex;                 /* fuerza flex aunque Bootstrap no cargue */
+        gap: 12px;                     /* fuerza separación entre cards */
+        align-items: stretch;
+        scroll-snap-type: x mandatory;
+        overflow-x: auto;
+        padding: 6px 48px;             /* espacio para flechas */
+        min-height: 160px;             /* evita colapso visual */
+        width: 100%;
+      }
+      #planes_scroller::-webkit-scrollbar{ height: 8px; }
+      /* Card visual por si tu tema no define nada */
+      .plan-card{ width: 240px; scroll-snap-align: center; cursor: pointer; }
+      .plan-card img{ height:120px; object-fit:cover; border-bottom:1px solid #eee; }
+    </style>
+
+    <div class="planes-wrapper">
+      <button class="btn btn-outline-secondary btn-sm nav-btn nav-left" id="planes_prev" aria-label="Anterior">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+
+      <div id="planes_scroller">
+        <!-- El JS inyecta tarjetas aquí.
+             Si ves este texto en producción tras llegar al Paso 3,
+             significa que listarPlanes no está regresando tarjetas. -->
+        <div id="planes_placeholder" class="text-muted">Cargando planes…</div>
+      </div>
+
+      <button class="btn btn-outline-secondary btn-sm nav-btn nav-right" id="planes_next" aria-label="Siguiente">
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+
+    <div class="text-center mt-2">
+      <small class="text-muted">Desliza o usa las flechas para recorrer los planes. Haz clic en una tarjeta para seleccionarlo.</small>
+    </div>
+  </div>
+  <div class="card-footer d-flex justify-content-between">
+    <button class="btn btn-outline-secondary btn-prev">Atrás</button>
+    <button id="next_from_plan" class="btn btn-primary" disabled>Siguiente</button>
+  </div>
+</div>
+
+
+      <!-- Paso 4 -->
+      <div class="card card-outline card-primary wiz-step d-none" data-step="4">
+        <div class="card-header"><h3 class="card-title">4) Seleccionar tipo de SIM</h3></div>
+        <div class="card-body">
+          <div id="sim_options" class="row g-3">
+            <div class="col-md-4">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="tipo_sim" id="tipo_sim_fisica" value="fisica" checked>
+                <label class="form-check-label" for="tipo_sim_fisica">SIM Física</label>
+              </div>
+              <small class="text-muted d-block">Selecciona un ICC disponible.</small>
+            </div>
+            <div class="col-md-4" id="esim_option">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="tipo_sim" id="tipo_sim_esim" value="esim">
+                <label class="form-check-label" for="tipo_sim_esim">eSIM</label>
+              </div>
+              <small class="text-muted d-block">Selecciona un ICC eSIM y genera su QR.</small>
+            </div>
+          </div>
+
+          <!-- Física -->
+          <div id="panel_sim_fisica" class="mt-3">
+            <label for="sel_icc" class="form-label">ICCs disponibles (física)</label>
+            <select id="sel_icc" class="form-select">
+              <option value="" selected disabled>Cargar ICCs...</option>
+            </select>
+            <div id="msg_icc" class="small text-muted mt-1"></div>
+          </div>
+
+          <!-- eSIM -->
+          <div id="panel_sim_esim" class="mt-3 d-none">
+            <label for="sel_icc_esim" class="form-label">ICCs eSIM disponibles</label>
+            <div class="d-flex gap-2">
+              <select id="sel_icc_esim" class="form-select">
+                <option value="" selected disabled>Cargar ICCs eSIM...</option>
+              </select>
+              <button id="btn_generar_esim" class="btn btn-outline-primary" disabled>
+                <i class="fas fa-qrcode me-1"></i> Generar QR
+              </button>
+            </div>
+            <div id="msg_icc_esim" class="small text-muted mt-1"></div>
+            <div id="esim_qr_box" class="mt-3 d-none">
+              <img id="esim_qr_img" src="" alt="QR eSIM" class="img-thumbnail" style="max-width: 220px;">
+              <div class="small text-muted mt-1" id="esim_qr_info"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer d-flex justify-content-between">
+          <button class="btn btn-outline-secondary btn-prev">Atrás</button>
+          <button id="next_from_sim" class="btn btn-primary" disabled>Siguiente</button>
+        </div>
+      </div>
+
+    
+
+
+      <!-- Paso 5 -->
+      <div class="card card-outline card-primary wiz-step d-none" data-step="5">
+        <div class="card-header"><h3 class="card-title">5) Nueva línea o Portabilidad</h3></div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="tipo_linea" id="linea_nueva" value="nueva" checked>
+                <label class="form-check-label" for="linea_nueva">Nueva línea</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="tipo_linea" id="linea_porta" value="portabilidad">
+                <label class="form-check-label" for="linea_porta">Portabilidad</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Portabilidad -->
+<div id="panel_porta" class="mt-3 d-none">
+  <div class="row g-3">
+    <div class="col-md-4">
+      <label for="inp_numero_porta" class="form-label">Número a portar</label>
+      <input type="text" id="inp_numero_porta" class="form-control" inputmode="numeric" autocomplete="tel" maxlength="10" pattern="[0-9]{10}" placeholder="10 dígitos" oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)">
+    </div>
+
+    <div class="col-md-4">
+      <label for="inp_nip_porta" class="form-label" title="Obtén el NIP mandando mensaje con la palabra NIP al *#06#*">
+        NIP de portabilidad
+        <i class="fas fa-info-circle text-muted" style="cursor:help" title="Obtén el NIP mandando mensaje con la palabra NIP al *#06#*"></i>
+      </label>
+      <input type="text" id="inp_nip_porta" class="form-control" inputmode="numeric" maxlength="6" pattern="[0-9]{4,6}" placeholder="NIP" oninput="this.value=this.value.replace(/\D/g,'').slice(0,6)">
+      <div class="form-text">Obtén el NIP mandando mensaje con la palabra <strong>NIP</strong> al <strong>*#06#*</strong>.</div>
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label" for="inp_icc_porta">ICCID a portar</label>
+      <input type="text" id="inp_icc_porta" class="form-control" minlength="18" placeholder="18+ dígitos" oninput="this.value=this.value.replace(/\D/g,'')">
+      <div class="form-text">Se completa automáticamente según la SIM seleccionada.</div>
+    </div>
+
+    <div class="col-md-6">
+      <label for="inp_nombre_cliente" class="form-label">Nombre del cliente</label>
+      <input type="text" id="inp_nombre_cliente" class="form-control" maxlength="120" placeholder="Nombre completo">
+    </div>
+    <div class="col-md-6">
+      <label for="inp_correo_cliente" class="form-label">Correo (opcional)</label>
+      <input type="email" id="inp_correo_cliente" class="form-control" maxlength="120" placeholder="cliente@dominio.com">
+    </div>
+  </div>
+  <div id="msg_porta" class="small text-muted mt-2"></div>
+</div>
+
+
+          <div id="panel_result_new" class="alert alert-success d-none mt-3"></div>
+          <div id="panel_result_porta" class="alert alert-info d-none mt-3"></div>
+        </div>
+        <div class="card-footer d-flex justify-content-between">
+          <button class="btn btn-outline-secondary btn-prev">Atrás</button>
+          <div>
+            <button id="btn_preactivar_nueva" class="btn btn-success">Preactivar nueva</button>
+            <button id="btn_solicitar_porta" class="btn btn-primary d-none">Solicitar portabilidad</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paso 6 -->
+      <div class="card card-outline card-primary wiz-step d-none" data-step="6">
+        <div class="card-header"><h3 class="card-title">6) Confirmación</h3></div>
+        <div class="card-body">
+          <div id="resumen_confirm" class="mb-3"></div>
+          <button id="btn_confirmar" class="btn btn-primary">Confirmar y registrar</button>
+          <div id="msg_confirm" class="mt-3"></div>
+        </div>
+        <div class="card-footer d-flex justify-content-between">
+          <button class="btn btn-outline-secondary btn-prev">Atrás</button>
+          <a href="<?php echo BASE_URL; ?>admin/wlactivalotu" class="btn btn-outline-primary">Reiniciar</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</main>
