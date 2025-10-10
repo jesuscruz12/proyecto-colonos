@@ -35,7 +35,7 @@ class wlactivalotuModel extends Model
     public function obtenerIccsDisponibles(int $tipoSim = 1): array
     {
         return Capsule::table('wlsims')
-            ->select('iccid as icc', 'lote as almacen', 'estatus_linea as status', 'tipo_sim')
+            ->select('iccid as icc', 'lote as almacen', 'estatus_linea as status', 'tipo_sim', 'msisdn')
             ->where('estatus_linea', 1)        // disponible
             ->where('tipo_sim', $tipoSim)      // 1=física, 2=eSIM
             ->orderBy('iccid', 'asc')

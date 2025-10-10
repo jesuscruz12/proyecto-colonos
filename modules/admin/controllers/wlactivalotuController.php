@@ -121,12 +121,12 @@ class wlactivalotuController extends adminController
     {
         $this->ensureAjaxPost();
 
-        if ($this->isMock()) {
-            return $this->jsonOk(['planes'=>[
-                ['cv_plan'=>101,'nombre'=>'Like Flex','precio'=>48.75,'tipo_producto'=>1,'primar_secundaria'=>1,'imagen'=>'/img/planes/flex.png'],
-                ['cv_plan'=>102,'nombre'=>'Like Connect','precio'=>109.85,'tipo_producto'=>1,'primar_secundaria'=>1,'imagen'=>'/img/planes/connect.png'],
-            ]]);
-        }
+        // if ($this->isMock()) {
+        //     return $this->jsonOk(['planes'=>[
+        //         ['cv_plan'=>101,'nombre'=>'Like Flex','precio'=>48.75,'tipo_producto'=>1,'primar_secundaria'=>1,'imagen'=>'/img/planes/flex.png'],
+        //         ['cv_plan'=>102,'nombre'=>'Like Connect','precio'=>109.85,'tipo_producto'=>1,'primar_secundaria'=>1,'imagen'=>'/img/planes/connect.png'],
+        //     ]]);
+        // }
 
         return $this->jsonOk(['planes'=>$this->_wlactivalotu->obtenerPlanesActivos()]);
     }
@@ -138,22 +138,29 @@ class wlactivalotuController extends adminController
         $tipo_sim = (string)$this->getPostParam('tipo_sim');
         $icc      = preg_replace('/\D+/', '', (string)$this->getPostParam('icc'));
         $cv_plan  = (int)$this->getPostParam('cv_plan');
+        $paso_dn      = preg_replace('/\D+/', '', (string)$this->getPostParam('msisdn'));
 
         if (!in_array($tipo_sim, ['fisica','esim'], true)) return $this->jsonError('Tipo de SIM inválido',422);
         if (!preg_match('/^\d{18,22}$/', $icc)) return $this->jsonError('ICCID inválido (18–22 dígitos).',422);
         if ($cv_plan <= 0) return $this->jsonError('Plan inválido',422);
 
-        if ($this->isMock() && $this->getCase()==='error') {
-            return $this->jsonError('No se pudo preactivar la línea.');
-        } elseif ($this->isMock()) {
-            return $this->jsonOk([
-                'preactivada'=>true,'msisdn'=>'5580012345','folio'=>'PR-'.date('YmdHis'),
-                'instrucciones'=> ($tipo_sim==='fisica'?'Inserta la SIM y reinicia tu equipo.':'Escanea el QR eSIM.')
-            ]);
-        }
+        // if ($this->isMock() && $this->getCase()==='error') {
+        //     return $this->jsonError('No se pudo preactivar la línea.');
+        // } elseif ($this->isMock()) {
+        //     return $this->jsonOk([
+        //         'preactivada'=>true,'msisdn'=>'5580012345','folio'=>'PR-'.date('YmdHis'),
+        //         'instrucciones'=> ($tipo_sim==='fisica'?'Inserta la SIM y reinicia tu equipo.':'Escanea el QR eSIM.')
+        //     ]);
+        // }
 
-        $r = $this->_wlactivalotu->preactivarLineaNueva($tipo_sim, $icc, $cv_plan);
-        if (!$r['ok']) return $this->jsonError($r['mensaje'] ?? 'No se pudo preactivar.');
+        // TODO agrega el llamado a la funcion de ApiLikePhone->PreRegistroSIM($clave,$cv_plan, $msisdn)
+        // $r = $this->_wlactivalotu->preactivarLineaNueva($tipo_sim, $icc, $cv_plan);
+        // if (!$r['ok']) return $this->jsonError($r['mensaje'] ?? 'No se pudo preactivar.');
+
+        $r = [
+            'ok'=> true,
+            'data'=>[],
+        ];
         return $this->jsonOk($r['data']);
     }
 
@@ -202,16 +209,37 @@ class wlactivalotuController extends adminController
             'cv_plan'    => (int)$this->getPostParam('cv_plan'),
             'cp'         => (string)$this->getPostParam('cp'),
             'imei'       => (string)$this->getPostParam('imei'),
-            'meta'       => $this->getPostParam('meta') ?: []
+            'meta'       => $this->getPostParam('meta') ?: [],
+            'msisdn'     => (string)$this->getPostParam('msisdn')
+
         ];
 
-        if ($this->isMock()) {
-            return $this->jsonOk(['resultado'=>'ok','mensaje'=>'Flujo confirmado y registrado (mock).','folio'=>'CF-'.date('YmdHis')]);
+        // if ($this->isMock()) {
+        //     return $this->jsonOk(['resultado'=>'ok','mensaje'=>'Flujo confirmado y registrado (mock).','folio'=>'CF-'.date('YmdHis')]);
+        // }
+
+        $clave = (int) Session::get('cv_wl');
+
+        // llamada a la API
+        $pre_a = new ApiLikePhone();
+        $pre_a->Login($clave);
+        $respuesta = $pre_a->PreRegistroSIM($clave, $payload['cv_plan'], $payload['msisdn']);
+        
+        if($respuesta['status'] === 200){
+
+            $m = new wlactivalotuModel();
+            $m->preactivarLineaNueva($payload['tipo_sim'], $payload['icc'], $payload['cv_plan'],);
+            // Logs
+            $this->_wlactivalotu->registrarCierreFlujo($payload);
+            return $this->jsonOk(['resultado'=>'ok','mensaje'=>'Flujo confirmado y registrado.','folio'=>'CF-'.date('YmdHis')]);
+
+        }else {
+            return $this->jsonError('No se pudo registrar la confirmación, favor de intentarlo más tarde.');
         }
 
-        $ok = $this->_wlactivalotu->registrarCierreFlujo($payload);
-        if (!$ok) return $this->jsonError('No se pudo registrar la confirmación.');
-        return $this->jsonOk(['resultado'=>'ok','mensaje'=>'Flujo confirmado y registrado.','folio'=>'CF-'.date('YmdHis')]);
+        // $ok = $this->_wlactivalotu->registrarCierreFlujo($payload);
+        // if (!$ok) return $this->jsonError('No se pudo registrar la confirmación.');
+        // return $this->jsonOk(['resultado'=>'ok','mensaje'=>'Flujo confirmado y registrado.','folio'=>'CF-'.date('YmdHis')]);
     }
 
     /* ================== helpers ================== */

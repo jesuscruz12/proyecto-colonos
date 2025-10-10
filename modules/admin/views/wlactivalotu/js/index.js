@@ -128,7 +128,8 @@
     imei: "", banda28_ok: false, acepta_esim: false,
     planes: [], cv_plan: null,
     tipo_sim: "fisica", icc: "", esim_qr_id: null, esim_qr_img: null, esim_expira_min: null, esim_qr_text: "",
-    resultados: { preactiva: null, porta: null }
+    resultados: { preactiva: null, porta: null },
+    msisdn: ""
   };
 
   /* ------------------------- Paso 1: Cobertura ------------------------- */
@@ -346,12 +347,18 @@
 
     clearMsg(msgSel);
     sel.innerHTML = [`<option value="" selected disabled>Selecciona...</option>`]
-      .concat(list.map(i => `<option value="${i.icc}">${i.icc} — ${i.almacen} (${i.status})</option>`))
+      .concat(list.map(i => `<option value="${i.icc}" data-msisdn="${i.msisdn}">${i.icc} - ${i.msisdn} — ${i.almacen} (${i.status})</option>`))
       .join("");
   }
 
   qs("#sel_icc")?.addEventListener("change", (ev) => {
-    state.icc = ev.target.value || "";
+
+    const sel = ev.target;
+    const option = sel.options[sel.selectedIndex];
+
+    state.icc = option.value || "";
+    state.msisdn = option.dataset.msisdn || ""; 
+
     qs("#next_from_sim").disabled = !state.icc;
     const iccPort = qs("#inp_icc_porta"); if (iccPort && state.icc) iccPort.value = state.icc;
   });
@@ -448,18 +455,19 @@
     const tipoSim = qs('input[name="tipo_sim"]:checked').value;
     const icc = state.icc || "";
     const cv_plan = state.cv_plan || "";
+    const msisdn = state.msisdn || "";
 
     if (!cv_plan) return alert("Selecciona un plan.");
     if (!icc)     return alert("Selecciona una SIM.");
 
-    showMsg("#panel_result_new", "info", "Procesando...");
+    showMsg("#panel_result_new", "info", "Revisando...");
     setLoading(btn, true);
-    const r = await postJSON("wlactivalotu/preactivarNueva", { tipo_sim: tipoSim, icc, cv_plan });
+    const r = await postJSON("wlactivalotu/preactivarNueva", { tipo_sim: tipoSim, icc, cv_plan, msisdn });
     setLoading(btn, false);
     if (!r.ok) return showMsg("#panel_result_new", "error", r.error);
 
     state.resultados.preactiva = r.data;
-    showMsg("#panel_result_new", "success", r.data.instrucciones || "Preactivación exitosa.");
+    showMsg("#panel_result_new", "success", r.data.instrucciones || "Revision exitosa.");
     prepararConfirmacion();
     showStep(6);
   });
@@ -498,6 +506,7 @@
     const simTxt = state.tipo_sim === "fisica" ? `SIM Física (ICC: ${state.icc || "-"})` : `eSIM (ICC: ${state.icc || "-"})`;
     const tipoLineaTxt = qs('input[name="tipo_linea"]:checked').value === "portabilidad" ? "Portabilidad" : "Nueva línea";
     const planId = state.cv_plan || "-";
+    const paso_dn = state.msisdn || "-";
     qs("#resumen_confirm").innerHTML = `
       <ul class="list-group">
         <li class="list-group-item"><strong>CP:</strong> ${qs("#inp_cp").value}</li>
@@ -505,6 +514,7 @@
         <li class="list-group-item"><strong>Plan ID:</strong> ${planId}</li>
         <li class="list-group-item"><strong>SIM:</strong> ${simTxt}</li>
         <li class="list-group-item"><strong>Tipo de línea:</strong> ${tipoLineaTxt}</li>
+        <li class="list-group-item"><strong>MSISDN:</strong> ${paso_dn}</li>
       </ul>`;
   }
 
@@ -520,7 +530,8 @@
       cv_plan: state.cv_plan || "",
       cp: qs("#inp_cp").value,
       imei: qs("#inp_imei").value,
-      meta: state.resultados
+      meta: state.resultados,
+      msisdn: state.msisdn || ""
     });
     setLoading(btn, false);
     if (!r.ok) return showMsg("#msg_confirm", "error", r.error);
