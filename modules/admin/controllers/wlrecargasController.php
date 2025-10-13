@@ -4,6 +4,8 @@ class wlrecargasController extends adminController
 {
     /** @var wlrecargasModel */
     private $_wlrecargas;
+    private $_wlplanes;
+    private $_wlsims;
 
     /** @var usuariosModel (usado por CORE->head() y helper ensureCvWlInSession) */
     private $_usuarios;
@@ -110,19 +112,21 @@ class wlrecargasController extends adminController
         $canal = strtoupper(trim((string) ($this->getPostParam('canal_venta') ?: 'NORMAL')));
         $saldo = trim((string) $this->getPostParam('saldo_consumido'));
 
-        // Inserta el registro
-        $nuevo = $this->_wlrecargas;
-        $nuevo->numero_telefono = $numero;
-        $nuevo->cv_plan         = (int) $this->getPostParam('cv_plan');
-        $nuevo->saldo_consumido = $saldo;
-        $nuevo->canal_venta     = $canal;
-        $nuevo->cv_sim          = (int) $this->getPostParam('cv_sim');
-        $nuevo->iccid           = trim((string) $this->getPostParam('iccid'));
-        $nuevo->cv_wl           = $cv_wl;                    // SIEMPRE desde la sesión
-        $nuevo->fecha_recarga   = date('Y-m-d H:i:s');
-        $nuevo->save();
+        $plan_seleccionado = $this->getPostParam('cv_plan');
 
-        $json->jsonError('info', 'Recarga creada exitosamente.');
+        // Llamar al endpoint Recargas
+         $r = new ApiLikePhone();
+        $r->Login($cv_wl);
+
+        $respuesta = $r->RecargaSIM($plan_seleccionado, $canal);
+
+         if($respuesta['status'] === 200){
+            $json->jsonError('info', 'Recarga creada exitosamente.');
+            return;
+        }else {
+            return $json->jsonError('error','No se pudo realizar la recarga, favor de intentarlo más tarde.');
+        }
+
     }
 
     /** ===========================================================

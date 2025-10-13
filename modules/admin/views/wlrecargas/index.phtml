@@ -252,34 +252,41 @@
                 <div class="form-text">Debe tener exactamente 10 dígitos.</div>
               </div>
 
-              <div class="col-6 col-md-3">
+              <!-- <div class="col-6 col-md-3">
                 <label for="cv_plan" class="form-label">Plan (cv_plan)</label>
                 <input type="number" class="form-control input-numeric" name="cv_plan" id="cv_plan" required min="1" step="1">
-              </div>
-
-              <div class="col-6 col-md-3">
-                <label for="cv_sim" class="form-label">cv_sim</label>
-                <input type="number" class="form-control input-numeric" name="cv_sim" id="cv_sim" min="0" step="1">
-              </div>
-
+              </div> -->
               <div class="col-12 col-md-6">
-                <label for="iccid" class="form-label">ICCID</label>
-                <input type="text" class="form-control" name="iccid" id="iccid" maxlength="30" placeholder="Opcional">
+                <label for="cv_plan" class="form-label">Plan (cv_plan)</label>
+                <select class="form-select" name="cv_plan" id="cv_plan" required>
+                  <option value="" disabled selected>Selecciona un plan</option>
+                </select>
               </div>
 
-              <div class="col-6 col-md-3">
+
+              <!-- <div class="col-6 col-md-3">
+                <label for="cv_sim" class="form-label">cv_sim</label>
+                <input type="number" class="form-control input-numeric" name="cv_sim" id="cv_sim" min="0" step="1" disabled>
+              </div> -->
+
+              <!-- <div class="col-12 col-md-6">
+                <label for="iccid" class="form-label">ICCID</label>
+                <input type="text" class="form-control" name="iccid" id="iccid" maxlength="30" placeholder="Opcional" disabled>
+              </div> -->
+
+              <!-- <div class="col-6 col-md-3">
                 <label for="canal_venta" class="form-label">Canal</label>
                 <select class="form-select" name="canal_venta" id="canal_venta">
                   <option value="NORMAL" selected>NORMAL</option>
                   <option value="BANCARIO">BANCARIO</option>
                   <option value="WEB">WEB</option>
                 </select>
-              </div>
+              </div> -->
 
-              <div class="col-6 col-md-3">
+              <!-- <div class="col-6 col-md-3">
                 <label for="saldo_consumido" class="form-label">Saldo consumido</label>
-                <input type="text" class="form-control" name="saldo_consumido" id="saldo_consumido" maxlength="100" placeholder="Ej. 50.00">
-              </div>
+                <input type="text" class="form-control" name="saldo_consumido" id="saldo_consumido" maxlength="100" placeholder="Ej. 50.00" disabled>
+              </div> -->
             </div>
 
             <div class="text-center mt-3">

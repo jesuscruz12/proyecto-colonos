@@ -111,6 +111,94 @@ app.core = app.core || {};
     resetDataTable(dt);
   };
 
+  function getAdminBase() {
+    const path = location.pathname;
+    const i = path.indexOf("/admin/");
+    if (i >= 0) return path.substring(0, i + 7);
+    if (typeof BASE_URL !== "undefined") return BASE_URL.replace(/\/?$/, "/") + "admin/";
+    return "/admin/";
+  }
+  const ADMIN_BASE = getAdminBase();
+
+  const urlParams   = new URLSearchParams(location.search);
+  const mockEnabled = urlParams.get("mock") === "1";
+  const mockCase    = urlParams.get("case") || "";
+
+  function buildURL(endpoint) {
+    let u = ADMIN_BASE.replace(/\/$/, "") + "/" + endpoint.replace(/^\//, "");
+    if (mockEnabled) {
+      u += (u.includes("?") ? "&" : "?") + "mock=1";
+      if (mockCase) u += "&case=" + encodeURIComponent(mockCase);
+    }
+    return u;
+  }
+
+  async function postJSON(endpoint, body = {}) {
+    const url = buildURL(endpoint);
+    let r, text;
+    try {
+      r = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
+        body: new URLSearchParams(body),
+        credentials: "same-origin",
+      });
+      text = await r.text();
+    } catch {
+      return { ok: false, error: "Sin conexión. Verifica tu red." };
+    }
+    let json = null;
+    try { json = JSON.parse(text); } catch { /* respuesta no-JSON */ }
+    if (!r.ok) return { ok: false, error: json?.error || text || `HTTP ${r.status}` };
+    if (!json || typeof json.ok === "undefined") return { ok: false, error: "Respuesta inválida del servidor." };
+    return json;
+  }
+
+    // Función para llenar el select de planes
+  async function cargarSelectPlanes() {
+    const selectPlan = document.querySelector("#cv_plan");
+    if (!selectPlan) return;
+
+    // Mostrar estado inicial
+    selectPlan.innerHTML = `<option value="">Cargando planes...</option>`;
+
+    // Llamada al endpoint
+    const r = await postJSON("wlactivalotu/listarPlanes");
+
+    if (!r.ok) {
+      selectPlan.innerHTML = `<option value="">Error al cargar planes</option>`;
+      console.error("Error al listar planes:", r.error);
+      return;
+    }
+
+    const planes = (r.data.planes || []).filter(p => Number(p.primar_secundaria) === 2); // 2 recargas
+
+    if (!planes.length) {
+      selectPlan.innerHTML = `<option value="">No hay planes disponibles</option>`;
+      return;
+    }
+
+    // Si usas state global
+    // state.planes = planes;
+
+    // Llenar opciones del select
+    selectPlan.innerHTML = `<option value="" disabled selected>Selecciona un plan</option>`;
+    planes.forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p.cv_plan;
+      opt.textContent = `${p.nombre} - $${Number(p.precio).toFixed(2)}`;
+      selectPlan.appendChild(opt);
+    });
+  }
+
+  // Cuando se abre el modal, se cargan los planes
+  document.addEventListener("DOMContentLoaded", () => {
+    const modalCrear = document.getElementById("modal-crear");
+    if (modalCrear) {
+      modalCrear.addEventListener("show.bs.modal", cargarSelectPlanes);
+    }
+  });
+
   /* ============================
      Módulo principal de la vista
      ============================ */
