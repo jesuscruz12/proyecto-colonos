@@ -163,7 +163,7 @@ app.core = app.core || {};
     selectPlan.innerHTML = `<option value="">Cargando planes...</option>`;
 
     // Llamada al endpoint
-    const r = await postJSON("wlactivalotu/listarPlanes");
+    const r = await postJSON("wlrecargas/listarPlanes");
 
     if (!r.ok) {
       selectPlan.innerHTML = `<option value="">Error al cargar planes</option>`;

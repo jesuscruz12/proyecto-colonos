@@ -5,8 +5,6 @@ class wlrecargasController extends adminController
     /** @var wlrecargasModel */
     private $_wlrecargas;
     private $_wlplanes;
-    private $_wlsims;
-
     /** @var usuariosModel (usado por CORE->head() y helper ensureCvWlInSession) */
     private $_usuarios;
 
@@ -22,6 +20,7 @@ class wlrecargasController extends adminController
         // 2) Carga los modelos que necesitamos
         $this->_wlrecargas = $this->loadModel('wlrecargas');
         $this->_usuarios   = $this->loadModel('usuarios');
+        $this->_wlplanes = $this->loadModel('wlplanes');
 
         // 3) Asegura que exista cv_wl en la sesión (es la “empresa/wallet” del usuario)
         $this->ensureCvWlInSession();
@@ -265,5 +264,42 @@ class wlrecargasController extends adminController
                 Session::set('cv_wl', (int) $row->cv_wl);
             }
         }
+    }
+
+    public function listarPlanes()
+    {
+        $this->ensureAjaxPost();
+
+        return $this->jsonOk(['planes'=>$this->_wlplanes->obtenerPlanesActivos(2)]); // 2 Recarga
+    }
+
+    /* ================== helpers ================== */
+    private function ensureAjaxPost(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->setJsonHeaders();
+            http_response_code(405);
+            echo json_encode(['ok'=>false,'error'=>'Método no permitido'], JSON_UNESCAPED_UNICODE); exit;
+        }
+        $this->setJsonHeaders();
+    }
+    private function setJsonHeaders(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        header('X-Content-Type-Options: nosniff');
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        header('Pragma: no-cache');
+    }
+    private function jsonOk(array $data = [], int $code = 200): void
+    {
+        $this->setJsonHeaders();
+        http_response_code($code);
+        echo json_encode(['ok'=>true,'data'=>$data], JSON_UNESCAPED_UNICODE); exit;
+    }
+    private function jsonError(string $message, int $code = 400): void
+    {
+        $this->setJsonHeaders();
+        http_response_code($code);
+        echo json_encode(['ok'=>false,'error'=>$message], JSON_UNESCAPED_UNICODE); exit;
     }
 }
