@@ -1,0 +1,278 @@
+<?php
+// modules/admin/views/usuarios/index.phtml
+// Vista Usuarios — TAKTIK (AdminLTE + Bootstrap 5 + DataTables Buttons)
+?>
+
+<main class="app-main">
+
+  <div class="app-content-header pb-2 border-bottom">
+    <div class="container-fluid">
+      <div class="row align-items-center g-2">
+        <div class="col-12 col-lg-7">
+          <h3 class="mb-0 d-flex align-items-center gap-2">
+            <i class="bi bi-people text-primary"></i>
+            Usuarios
+          </h3>
+          <div class="small text-muted">
+            Gestión de usuarios por empresa (alta, edición, estado, y carga masiva).
+          </div>
+        </div>
+        <div class="col-12 col-lg-5">
+          <ol class="breadcrumb float-lg-end mb-0">
+            <li class="breadcrumb-item"><a href="<?= BASE_URL; ?>admin/index">Home</a></li>
+            <li class="breadcrumb-item active">Usuarios</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-content pt-3">
+    <div class="container-fluid">
+
+      <!-- Toolbar -->
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+          <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">
+            <div class="d-flex flex-wrap gap-2">
+              <button class="btn btn-primary" id="btnNuevo">
+                <i class="bi bi-plus-lg me-1"></i> Nuevo usuario
+              </button>
+
+              <button class="btn btn-outline-secondary" id="btnReload">
+                <i class="bi bi-arrow-clockwise me-1"></i> Recargar
+              </button>
+
+              <div class="vr d-none d-md-block"></div>
+
+              <button class="btn btn-outline-success" id="btnTemplate">
+                <i class="bi bi-download me-1"></i> Descargar plantilla CSV
+              </button>
+
+              <button class="btn btn-outline-success" id="btnImport">
+                <i class="bi bi-upload me-1"></i> Subir usuarios (CSV)
+              </button>
+
+              <input type="file" id="fileCsv" accept=".csv,text/csv" class="d-none" />
+            </div>
+
+            <!-- Filtros -->
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+              <div class="input-group input-group-sm" style="width: 190px;">
+                <span class="input-group-text"><i class="bi bi-toggle2-on"></i></span>
+                <select class="form-select" id="fActivo">
+                  <option value="">Activo: Todos</option>
+                  <option value="1">Solo activos</option>
+                  <option value="0">Solo inactivos</option>
+                </select>
+              </div>
+
+              <div class="input-group input-group-sm" style="width: 170px;">
+                <span class="input-group-text"><i class="bi bi-calendar3"></i></span>
+                <input type="date" class="form-control" id="fDesde" />
+              </div>
+
+              <div class="input-group input-group-sm" style="width: 170px;">
+                <span class="input-group-text"><i class="bi bi-calendar3"></i></span>
+                <input type="date" class="form-control" id="fHasta" />
+              </div>
+
+              <button class="btn btn-sm btn-outline-primary" id="btnApplyFilters">
+                <i class="bi bi-funnel me-1"></i> Aplicar
+              </button>
+
+              <button class="btn btn-sm btn-outline-secondary" id="btnClearFilters">
+                <i class="bi bi-x-circle me-1"></i> Limpiar
+              </button>
+            </div>
+          </div>
+
+          <div class="small text-muted mt-2">
+            Tip: Puedes exportar el listado con los botones arriba de la tabla (CSV/Excel/PDF/Imprimir).
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla -->
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <table id="tablaUsuarios" class="table table-striped table-hover align-middle w-100">
+            <thead>
+              <tr>
+                <th style="width:70px;">ID</th>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <th>Puesto</th>
+                <th style="width:90px;">Activo</th>
+                <th style="width:160px;">Creado</th>
+                <th style="width:220px;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+
+          <div class="small text-muted">
+            *Los eliminados (soft delete) no deberían mostrarse.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- Modal: Crear/Editar -->
+<div class="modal fade" id="modalUsuario" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalUsuarioTitle">Usuario</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body">
+        <form id="formUsuario" autocomplete="off">
+          <input type="hidden" name="id" id="u_id" value="" />
+
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label">Nombre *</label>
+              <input type="text" class="form-control" name="nombre" id="u_nombre" required maxlength="150" />
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label">Email *</label>
+              <input type="email" class="form-control" name="email" id="u_email" required maxlength="150" />
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label">Teléfono</label>
+              <input type="text" class="form-control" name="telefono" id="u_telefono" maxlength="50" />
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label">Puesto</label>
+              <input type="text" class="form-control" name="puesto" id="u_puesto" maxlength="80" />
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">Activo</label>
+              <select class="form-select" name="activo" id="u_activo">
+                <option value="1">Sí</option>
+                <option value="0">No</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-8" id="wrapPasswordCreate">
+              <label class="form-label">Password (solo al crear) *</label>
+              <input type="password" class="form-control" name="password_plain" id="u_password_plain" minlength="6" placeholder="Mínimo 6 caracteres" />
+              <div class="form-text">Para editar, usa “Cambiar password”.</div>
+            </div>
+          </div>
+
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btnGuardarUsuario">
+          <i class="bi bi-check2-circle me-1"></i> Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Reset password -->
+<div class="modal fade" id="modalPassword" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-md modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Cambiar password</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body">
+        <form id="formPassword" autocomplete="off">
+          <input type="hidden" id="p_id" value="" />
+          <div class="mb-2 small text-muted" id="p_label"></div>
+          <label class="form-label">Nuevo password *</label>
+          <input type="password" class="form-control" id="p_password" minlength="6" placeholder="Mínimo 6 caracteres" required />
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="btnGuardarPassword">
+          <i class="bi bi-shield-lock me-1"></i> Cambiar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Import CSV -->
+<div class="modal fade" id="modalImport" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Carga masiva (CSV)</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="alert alert-warning">
+          <div class="fw-semibold mb-1">Formato requerido:</div>
+          <div class="small">
+            Columnas: <code>nombre,email,password,telefono,puesto,activo</code><br>
+            <b>activo</b>: 1 ó 0. Si viene vacío, se toma 1.
+          </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+          <button class="btn btn-outline-success" id="btnPickCsv">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Elegir CSV
+          </button>
+          <button class="btn btn-outline-secondary" id="btnClearBatch">
+            <i class="bi bi-trash me-1"></i> Limpiar
+          </button>
+          <div class="ms-auto small text-muted" id="batchInfo">Sin archivo.</div>
+        </div>
+
+        <div class="progress mb-2" style="height: 10px;">
+          <div class="progress-bar" role="progressbar" style="width:0%;" id="batchBar"></div>
+        </div>
+
+        <div class="small text-muted mb-2" id="batchStatus">—</div>
+
+        <div class="table-responsive" style="max-height: 320px;">
+          <table class="table table-sm table-striped align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>#</th>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <th>Puesto</th>
+                <th>Activo</th>
+                <th>Resultado</th>
+              </tr>
+            </thead>
+            <tbody id="batchPreview">
+              <tr><td colspan="7" class="text-muted p-3">Sin datos cargados.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-success" id="btnRunBatch" disabled>
+          <i class="bi bi-play-fill me-1"></i> Ejecutar carga
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

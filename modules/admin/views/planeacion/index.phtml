@@ -1,0 +1,232 @@
+<?php
+/**
+ * Planeación — Vista TAKTIK (PRO)
+ * - DataTables server-side
+ * - Modal detalle (items + ruta + tiempos)
+ * - Alertify (confirm/toast)
+ * - Tooltips Bootstrap
+ */
+
+$recursos = function_exists('recursos_list') ? recursos_list() : [];
+?>
+<main class="app-main">
+  <div class="app-content-header border-bottom pb-2">
+    <div class="container-fluid d-flex align-items-center justify-content-between">
+      <div>
+        <h3 class="mb-0">
+          <i class="bi bi-diagram-3 text-primary"></i>
+          Planeación
+        </h3>
+        <small class="text-muted">OTs <b>pendientes</b> → revisar ruta/tiempos → generar tareas.</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-content pt-3">
+    <div class="container-fluid">
+
+      <!-- Filtros -->
+      <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body">
+          <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-4">
+              <label class="form-label mb-1 d-flex align-items-center gap-2">
+                Prioridad
+                <i class="bi bi-info-circle text-muted"
+                   data-bs-toggle="tooltip"
+                   title="Filtra las OTs pendientes por prioridad."></i>
+              </label>
+              <select class="form-select form-select-sm" id="f_prioridad">
+                <option value="">Todas</option>
+                <option value="baja">Baja</option>
+                <option value="normal">Normal</option>
+                <option value="alta">Alta</option>
+                <option value="urgente">Urgente</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-3">
+              <label class="form-label mb-1 d-flex align-items-center gap-2">
+                Compromiso desde
+                <i class="bi bi-info-circle text-muted"
+                   data-bs-toggle="tooltip"
+                   title="Fecha mínima de compromiso."></i>
+              </label>
+              <input type="date" class="form-control form-control-sm" id="f_desde">
+            </div>
+
+            <div class="col-12 col-md-3">
+              <label class="form-label mb-1 d-flex align-items-center gap-2">
+                Compromiso hasta
+                <i class="bi bi-info-circle text-muted"
+                   data-bs-toggle="tooltip"
+                   title="Fecha máxima de compromiso."></i>
+              </label>
+              <input type="date" class="form-control form-control-sm" id="f_hasta">
+            </div>
+
+            <div class="col-12 col-md-2 d-flex gap-2">
+              <button class="btn btn-sm btn-outline-secondary w-100" id="btn_reset" type="button">
+                <i class="bi bi-x-circle"></i> Limpiar
+              </button>
+            </div>
+          </div>
+
+          <div class="small text-muted mt-2">
+            <b>Reglas:</b> No planifica si la OT no está en <b>pendiente</b>, si ya tiene tareas, si no tiene ítems,
+            si hay ítems sin ruta, o si la ruta no tiene operaciones.
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla -->
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white d-flex align-items-center justify-content-between">
+          <div>
+            Órdenes de trabajo pendientes
+            <div class="small text-muted">Tip: revisa con el ojo antes de planificar.</div>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm table-striped align-middle w-100" id="tbl_ots">
+              <thead>
+                <tr>
+                  <th>Folio</th>
+                  <th>Descripción</th>
+                  <th>Cliente</th>
+                  <th>Compromiso</th>
+                  <th>Prioridad</th>
+                  <th>Resumen</th>
+                  <th>Creado por</th>
+                  <th>Creado</th>
+                  <th style="width:120px"></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- Modal Detalle OT -->
+<div class="modal fade" id="mdl_detalle_ot" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title mb-0">
+            Detalle OT: <span id="mdl_ot_folio"></span>
+          </h5>
+          <div class="small text-muted">
+            Cliente: <span id="mdl_ot_cliente"></span> · Compromiso: <span id="mdl_ot_compromiso"></span> ·
+            Prioridad: <span id="mdl_ot_prioridad"></span>
+          </div>
+          <div class="small text-muted">
+            Creado por: <span id="mdl_ot_creado_por"></span>
+          </div>
+        </div>
+
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body">
+        <div id="mdl_alert" class="alert alert-info">Cargando detalle...</div>
+
+        <div class="mb-3">
+          <label class="form-label mb-1">Descripción</label>
+          <div class="border rounded p-2 bg-light" id="mdl_ot_desc"></div>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-12 col-lg-5">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header bg-white">
+                Ítems
+                <span class="text-muted small ms-1"
+                      data-bs-toggle="tooltip"
+                      title="Aquí se ven los ítems de la OT y si cada uno tiene ruta asignada.">
+                  <i class="bi bi-info-circle"></i>
+                </span>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-sm mb-0" id="tbl_items_detalle">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Tipo</th>
+                        <th>Referencia</th>
+                        <th class="text-end">Cant.</th>
+                        <th>Ruta</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-lg-7">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header bg-white d-flex align-items-center justify-content-between">
+                <div>
+                  Operaciones (ruta)
+                  <span class="text-muted small ms-1"
+                        data-bs-toggle="tooltip"
+                        title="Estas operaciones salen de ruta_operaciones para la versión_ruta asignada.">
+                    <i class="bi bi-info-circle"></i>
+                  </span>
+                </div>
+                <div class="small text-muted">
+                  Total estimado: <b id="mdl_total"></b>
+                </div>
+              </div>
+
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-sm mb-0" id="tbl_ops_detalle">
+                    <thead class="table-light">
+                      <tr>
+                        <th class="text-end">Sec.</th>
+                        <th>Proceso</th>
+                        <th class="text-end">Setup</th>
+                        <th class="text-end">Seg/u</th>
+                        <th class="text-end">Dur</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="card-footer bg-white d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
+                  Cerrar
+                </button>
+
+                <button type="button"
+                        class="btn btn-primary btn-sm"
+                        id="btn_planificar_modal"
+                        data-ot=""
+                        data-bs-toggle="tooltip"
+                        title="Genera tareas en base a la ruta, asigna máquina y programa inicio/fin.">
+                  <i class="bi bi-play-fill"></i> Planificar
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /modal-body -->
+
+    </div>
+  </div>
+</div>

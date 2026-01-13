@@ -1,185 +1,118 @@
-app.globales.cv_temporal = 0;
-app.core.index = {
-  modelo: function () {
-    return {};
-  },
+// modules/admin/views/index/js/index.js
+// Home (Dashboard) — AJAX DESACTIVADO TEMPORALMENTE
 
-  controlador: function () {
-    // NOTICE!! DO NOT USE ANY OF THIS JAVASCRIPT
-    // IT'S ALL JUST JUNK FOR DEMO
-    // ++++++++++++++++++++++++++++++++++++++++++
+(function () {
+  // 🔴 FLAG GLOBAL
+  const DISABLE_DASHBOARD_AJAX = true;
 
-    const sales_chart_options = {
-      series: [
-        {
-          name: "Digital Goods",
-          data: [28, 48, 40, 19, 86, 27, 90],
-        },
-        {
-          name: "Electronics",
-          data: [65, 59, 80, 81, 56, 55, 40],
-        },
-      ],
-      chart: {
-        height: 300,
-        type: "area",
-        toolbar: {
-          show: false,
-        },
-      },
-      legend: {
-        show: false,
-      },
-      colors: ["#0d6efd", "#20c997"],
-      dataLabels: {
-        enabled: false,
-      },
-      stroke: {
-        curve: "smooth",
-      },
-      xaxis: {
-        type: "datetime",
-        categories: [
-          "2023-01-01",
-          "2023-02-01",
-          "2023-03-01",
-          "2023-04-01",
-          "2023-05-01",
-          "2023-06-01",
-          "2023-07-01",
-        ],
-      },
-      tooltip: {
-        x: {
-          format: "MMMM yyyy",
-        },
-      },
+  // ---- Helpers
+  const $1 = (sel) => document.querySelector(sel);
+
+  function esc(s) {
+    return String(s ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  /* ============================================================
+     🔴 KPIs — DESACTIVADOS
+     ============================================================ */
+  async function loadKpis() {
+    return; // ❌ NO SE LLAMA /kpis
+  }
+
+  /* ============================================================
+     🔴 DATATABLES — DESACTIVADOS
+     ============================================================ */
+  let dtOts = null, dtTareas = null, dtAuditoria = null;
+
+  function initDataTables() {
+    return; // ❌ NO se inicializa ningún DataTable
+  }
+
+  function reloadDT() {
+    return; // ❌ NO hay reload
+  }
+
+  /* ============================================================
+     CSV LINKS (esto NO usa AJAX, se puede quedar)
+     ============================================================ */
+  function filtrosActuales() {
+    return {
+      desde: ($1("#f_desde")?.value || "").trim(),
+      hasta: ($1("#f_hasta")?.value || "").trim(),
+      estado: ($1("#f_estado_ot")?.value || "").trim(),
     };
+  }
 
-    const sales_chart = new ApexCharts(
-      document.querySelector("#revenue-chart"),
-      sales_chart_options
-    );
-    sales_chart.render();
-
-    // ***********************************************************
-
-    const visitorsData = {
-      US: 398, // USA
-      SA: 400, // Saudi Arabia
-      CA: 1000, // Canada
-      DE: 500, // Germany
-      FR: 760, // France
-      CN: 300, // China
-      AU: 700, // Australia
-      BR: 600, // Brazil
-      IN: 800, // India
-      GB: 320, // Great Britain
-      RU: 3000, // Russia
-    };
-
-    // World map by jsVectorMap
-    const map = new jsVectorMap({
-      selector: "#world-map",
-      map: "world",
+  function buildQuery(params) {
+    const sp = new URLSearchParams();
+    Object.entries(params || {}).forEach(([k, v]) => {
+      if (v !== null && v !== undefined && String(v).trim() !== "") {
+        sp.set(k, String(v).trim());
+      }
     });
+    const qs = sp.toString();
+    return qs ? "?" + qs : "";
+  }
 
-    // Sparkline charts
-    const option_sparkline1 = {
-      series: [
-        {
-          data: [1000, 1200, 920, 927, 931, 1027, 819, 930, 1021],
-        },
-      ],
-      chart: {
-        type: "area",
-        height: 50,
-        sparkline: {
-          enabled: true,
-        },
-      },
-      stroke: {
-        curve: "straight",
-      },
-      fill: {
-        opacity: 0.3,
-      },
-      yaxis: {
-        min: 0,
-      },
-      colors: ["#DCE6EC"],
-    };
+  function bindCsvLinks() {
+    const btnOts = $1("#btn_csv_ots");
+    const btnTar = $1("#btn_csv_tareas");
 
-    const sparkline1 = new ApexCharts(
-      document.querySelector("#sparkline-1"),
-      option_sparkline1
-    );
-    sparkline1.render();
+    function hrefOts() {
+      const f = filtrosActuales();
+      return BASE_URL + "admin/index/export_ots_csv" +
+        buildQuery({ desde: f.desde, hasta: f.hasta, estado: f.estado });
+    }
 
-    const option_sparkline2 = {
-      series: [
-        {
-          data: [515, 519, 520, 522, 652, 810, 370, 627, 319, 630, 921],
-        },
-      ],
-      chart: {
-        type: "area",
-        height: 50,
-        sparkline: {
-          enabled: true,
-        },
-      },
-      stroke: {
-        curve: "straight",
-      },
-      fill: {
-        opacity: 0.3,
-      },
-      yaxis: {
-        min: 0,
-      },
-      colors: ["#DCE6EC"],
-    };
+    function hrefTareas() {
+      const f = filtrosActuales();
+      return BASE_URL + "admin/index/export_tareas_csv" +
+        buildQuery({ desde: f.desde, hasta: f.hasta });
+    }
 
-    const sparkline2 = new ApexCharts(
-      document.querySelector("#sparkline-2"),
-      option_sparkline2
-    );
-    sparkline2.render();
+    if (btnOts) {
+      btnOts.addEventListener("click", (e) => {
+        e.preventDefault();
+        window.location.href = hrefOts();
+      });
+    }
 
-    const option_sparkline3 = {
-      series: [
-        {
-          data: [15, 19, 20, 22, 33, 27, 31, 27, 19, 30, 21],
-        },
-      ],
-      chart: {
-        type: "area",
-        height: 50,
-        sparkline: {
-          enabled: true,
-        },
-      },
-      stroke: {
-        curve: "straight",
-      },
-      fill: {
-        opacity: 0.3,
-      },
-      yaxis: {
-        min: 0,
-      },
-      colors: ["#DCE6EC"],
-    };
+    if (btnTar) {
+      btnTar.addEventListener("click", (e) => {
+        e.preventDefault();
+        window.location.href = hrefTareas();
+      });
+    }
+  }
 
-    const sparkline3 = new ApexCharts(
-      document.querySelector("#sparkline-3"),
-      option_sparkline3
-    );
-    sparkline3.render();
-  },
-};
+  /* ============================================================
+     🔴 APLICAR / LIMPIAR — SIN AJAX
+     ============================================================ */
+  async function aplicar() {
+    return; // ❌ NO hace nada
+  }
 
-$(document).ready(function () {
-  app.core.index.controlador();
-});
+  function limpiar() {
+    const d = $1("#f_desde"); if (d) d.value = "";
+    const h = $1("#f_hasta"); if (h) h.value = "";
+    const e = $1("#f_estado_ot"); if (e) e.value = "";
+  }
+
+  /* ============================================================
+     DOM READY
+     ============================================================ */
+  document.addEventListener("DOMContentLoaded", function () {
+    bindCsvLinks(); // ✔ esto sí puede quedarse
+
+    const btnA = $1("#btn_aplicar");
+    const btnL = $1("#btn_limpiar");
+
+    if (btnA) btnA.addEventListener("click", () => aplicar());
+    if (btnL) btnL.addEventListener("click", () => limpiar());
+  });
+})();

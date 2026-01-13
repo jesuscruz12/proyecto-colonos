@@ -1,0 +1,168 @@
+<section class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-6">
+        <h1>Calendarios laborales</h1>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right">
+          <li class="breadcrumb-item"><a href="<?= BASE_URL ?>admin">Inicio</a></li>
+          <li class="breadcrumb-item active">Calendarios laborales</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="content">
+  <div class="container-fluid">
+
+    <div class="row">
+      <!-- Tabla -->
+      <div class="col-lg-4">
+        <div class="card card-outline card-primary">
+          <div class="card-header">
+            <h3 class="card-title">Plantillas</h3>
+            <div class="card-tools">
+              <button id="btnNew" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i> Nuevo
+              </button>
+            </div>
+          </div>
+
+          <div class="card-body">
+
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div class="custom-control custom-switch">
+                <input type="checkbox" class="custom-control-input" id="swDeleted">
+                <label class="custom-control-label" for="swDeleted">Ver eliminados</label>
+              </div>
+              <small class="text-muted" id="lblMode">Mostrando activos</small>
+            </div>
+
+            <table id="tblCal" class="table table-sm table-striped table-bordered w-100">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nombre</th>
+                  <th>Inicio</th>
+                  <th>Fin</th>
+                  <th style="width:140px;">Acciones</th>
+                </tr>
+              </thead>
+            </table>
+
+            <small class="text-muted d-block mt-2">
+              Selecciona un calendario para ver su semana.
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview calendario -->
+      <div class="col-lg-8">
+        <div class="card card-outline card-success">
+          <div class="card-header">
+            <h3 class="card-title">
+              <span id="calTitle">Previsualización</span>
+            </h3>
+            <div class="card-tools">
+              <button id="btnReloadCal" class="btn btn-outline-success btn-sm" disabled>
+                <i class="fas fa-sync"></i> Recargar
+              </button>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div id="fcWrap"></div>
+
+            <div class="alert alert-warning mt-3 mb-0">
+              <b>Nota:</b> Si no ves el calendario, te falta cargar <b>FullCalendar</b> en tu layout/head.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Modal -->
+<div class="modal fade" id="mdlCal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="mdlTitle">Calendario</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <form id="frmCal">
+        <div class="modal-body">
+          <input type="hidden" name="id" id="cal_id" value="">
+
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label>Nombre</label>
+              <input type="text" class="form-control" name="nombre" id="cal_nombre" maxlength="120" required>
+            </div>
+            <div class="form-group col-md-3">
+              <label>Hora inicio</label>
+              <input type="time" class="form-control" name="hora_inicio" id="cal_hi" value="08:00" required>
+            </div>
+            <div class="form-group col-md-3">
+              <label>Hora fin</label>
+              <input type="time" class="form-control" name="hora_fin" id="cal_hf" value="18:00" required>
+            </div>
+          </div>
+
+          <hr>
+
+          <div class="form-group">
+            <label>Días laborables</label>
+            <div id="diasBox" class="row"></div>
+          </div>
+
+          <hr>
+
+          <div class="form-group">
+            <div class="d-flex align-items-center justify-content-between">
+              <label class="mb-0">Pausas</label>
+              <button type="button" class="btn btn-outline-primary btn-sm" id="btnAddPausa">
+                <i class="fas fa-plus"></i> Agregar pausa
+              </button>
+            </div>
+
+            <div class="table-responsive mt-2">
+              <table class="table table-sm table-bordered" id="tblPausas">
+                <thead>
+                  <tr>
+                    <th style="width:120px;">Día</th>
+                    <th style="width:120px;">Inicio</th>
+                    <th style="width:120px;">Fin</th>
+                    <th>Nombre</th>
+                    <th style="width:80px;"></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+
+            <small class="text-muted">Las pausas se pintan en la previsualización como bloques.</small>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> Guardar
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>

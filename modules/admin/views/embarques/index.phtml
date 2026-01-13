@@ -1,0 +1,202 @@
+<?php
+// C:\xampp\htdocs\qacrmtaktik\modules\admin\views\embarques\index.phtml
+/**
+ * Embarques — Vista TAKTIK (PRO)
+ * - DataTables server-side
+ * - Modal Embarque + Items
+ */
+?>
+<main class="app-main">
+  <div class="app-content-header border-bottom pb-2">
+    <div class="container-fluid d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-wrap">
+      <div>
+        <h3 class="mb-0">
+          <i class="bi bi-truck text-primary"></i>
+          Embarques
+        </h3>
+        <div class="text-muted small">Crea embarques por OT y agrega ítems (parte/producto).</div>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button class="btn btn-primary" id="btn_new">
+          <i class="bi bi-plus-lg me-1"></i> Nuevo embarque
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-content pt-3">
+    <div class="container-fluid">
+
+      <!-- Filtros -->
+      <div class="card shadow-sm border-0 mb-3">
+        <div class="card-header bg-white d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div class="fw-semibold">Filtros</div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary" id="btn_limpiar">
+              <i class="bi bi-eraser me-1"></i>Limpiar
+            </button>
+            <button class="btn btn-sm btn-primary" id="btn_filtrar">
+              <i class="bi bi-funnel me-1"></i>Aplicar
+            </button>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="row g-2">
+            <div class="col-12 col-md-4">
+              <label class="form-label small mb-1">Estado</label>
+              <select class="form-select form-select-sm" id="f_estado">
+                <option value="">Todos</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label small mb-1">Creado desde</label>
+              <input type="date" class="form-control form-control-sm" id="f_desde">
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label small mb-1">Creado hasta</label>
+              <input type="date" class="form-control form-control-sm" id="f_hasta">
+            </div>
+          </div>
+          <div class="small text-muted mt-2">
+            Tip: busca por folio de embarque, folio OT, cliente o notas.
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla -->
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white">Listado</div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle w-100" id="tbl">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Folio</th>
+                  <th>OT</th>
+                  <th>Cliente</th>
+                  <th>Estado</th>
+                  <th>Envío</th>
+                  <th>Entrega</th>
+                  <th>Ítems</th>
+                  <th>Total</th>
+                  <th>Creado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- =========================
+  MODAL EMBARQUE
+========================= -->
+<div class="modal fade" id="modal_emb" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title mb-0" id="emb_title">Nuevo embarque</h5>
+          <div class="small text-muted" id="emb_subtitle">Captura datos + agrega ítems.</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body">
+        <form id="frm_emb" class="needs-validation" novalidate>
+          <input type="hidden" name="id" id="emb_id" value="0">
+
+          <div class="row g-2">
+            <div class="col-12 col-lg-5">
+              <label class="form-label">OT <span class="text-danger">*</span></label>
+              <div class="input-group input-group-sm">
+                <input type="text" class="form-control" id="ot_q" placeholder="Buscar OT (folio/desc/cliente)...">
+                <button class="btn btn-outline-secondary" type="button" id="btn_ot_buscar">
+                  <i class="bi bi-search"></i>
+                </button>
+              </div>
+              <select class="form-select form-select-sm mt-2" name="orden_trabajo_id" id="emb_ot_id" required></select>
+              <div class="invalid-feedback">OT requerida.</div>
+
+              <div class="small text-muted mt-2" id="ot_info"></div>
+            </div>
+
+            <div class="col-12 col-lg-3">
+              <label class="form-label">Folio</label>
+              <input type="text" class="form-control form-control-sm" name="folio" id="emb_folio" maxlength="80" placeholder="Opcional">
+            </div>
+
+            <div class="col-12 col-lg-4">
+              <label class="form-label">Estado <span class="text-danger">*</span></label>
+              <select class="form-select form-select-sm" name="estado" id="emb_estado" required></select>
+              <div class="invalid-feedback">Estado requerido.</div>
+            </div>
+          </div>
+
+          <div class="row g-2 mt-2">
+            <div class="col-12 col-md-6">
+              <label class="form-label">Fecha envío</label>
+              <input type="datetime-local" class="form-control form-control-sm" name="fecha_envio" id="emb_envio">
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Fecha entrega</label>
+              <input type="datetime-local" class="form-control form-control-sm" name="fecha_entrega" id="emb_entrega">
+            </div>
+          </div>
+
+          <div class="mt-2">
+            <label class="form-label">Notas</label>
+            <input type="text" class="form-control form-control-sm" name="notas" id="emb_notas" maxlength="255" placeholder="Opcional">
+          </div>
+
+          <hr class="my-3">
+
+          <!-- Items -->
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="fw-semibold">Ítems del embarque</div>
+            <button class="btn btn-sm btn-outline-primary" type="button" id="btn_add_item">
+              <i class="bi bi-plus-lg"></i> Agregar ítem
+            </button>
+          </div>
+
+          <div class="table-responsive mt-2">
+            <table class="table table-sm align-middle" id="tbl_items">
+              <thead class="table-light">
+                <tr>
+                  <th style="width:140px">Tipo</th>
+                  <th>Referencia</th>
+                  <th style="width:140px">Cantidad</th>
+                  <th style="width:60px"></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div class="alert alert-warning mt-2 mb-0">
+            <i class="bi bi-info-circle"></i>
+            Regla: al menos 1 ítem. Para “entregado”, debe tener fecha envío (y normalmente fecha entrega).
+          </div>
+
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal" type="button">Cerrar</button>
+        <button class="btn btn-primary btn-sm" id="btn_save" type="button">
+          <i class="bi bi-save"></i> Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

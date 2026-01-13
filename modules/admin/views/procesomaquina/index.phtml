@@ -1,0 +1,106 @@
+<?php
+// C:\xampp\htdocs\qacrmtaktik\modules\admin\views\procesomaquina\index.phtml
+?>
+<main class="app-main">
+  <div class="app-content-header border-bottom pb-2">
+    <div class="container-fluid d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-wrap">
+      <div>
+        <h3 class="mb-0">
+          <i class="bi bi-diagram-3 text-primary"></i>
+          Proceso ↔ Máquina
+        </h3>
+        <div class="text-muted small">Selecciona una máquina y marca los procesos permitidos.</div>
+      </div>
+
+      <div class="d-flex gap-2 align-items-center">
+        <span class="badge text-bg-light border" id="lbl_sel">Sin máquina</span>
+        <button class="btn btn-primary" id="btn_save" type="button" disabled>
+          <i class="bi bi-save me-1"></i> Guardar asignación
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-content pt-3">
+    <div class="container-fluid">
+      <div class="row g-3">
+
+        <!-- Máquinas -->
+        <div class="col-12 col-lg-5">
+          <div class="card shadow-sm border-0">
+            <div class="card-header bg-white d-flex align-items-center justify-content-between">
+              <div class="fw-semibold">Máquinas</div>
+              <div class="small text-muted">Click para seleccionar</div>
+            </div>
+
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle w-100" id="tbl_maquinas">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Código</th>
+                      <th>Nombre</th>
+                      <th>Tipo</th>
+                      <th>Activo</th>
+                      <th>Procesos</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <div class="small text-muted mt-2">Tip: puedes buscar por nombre/código.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Procesos -->
+        <div class="col-12 col-lg-7">
+          <div class="card shadow-sm border-0">
+            <div class="card-header bg-white d-flex align-items-center justify-content-between flex-wrap gap-2">
+              <div class="fw-semibold">Procesos</div>
+
+              <div class="d-flex align-items-center gap-2">
+                <select class="form-select form-select-sm" id="f_activo" style="width: 170px">
+                  <option value="1">Solo activos</option>
+                  <option value="">Todos</option>
+                  <option value="0">Solo inactivos</option>
+                </select>
+
+                <button class="btn btn-sm btn-outline-secondary" id="btn_toggle_all" type="button" disabled>
+                  <i class="bi bi-check2-square"></i> Marcar/Desmarcar
+                </button>
+
+                <span class="badge text-bg-dark" id="lbl_count">0</span>
+              </div>
+            </div>
+
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-sm table-striped align-middle w-100" id="tbl_procesos">
+                  <thead>
+                    <tr>
+                      <th style="width:40px"></th>
+                      <th>ID</th>
+                      <th>Proceso</th>
+                      <th class="text-end">Setup</th>
+                      <th>Frecuencia</th>
+                      <th>Activo</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+
+              <div class="small text-muted mt-2">
+                Regla: al guardar se reemplaza la asignación completa de esa máquina (batch).
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- row -->
+    </div>
+  </div>
+</main>

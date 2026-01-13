@@ -1,0 +1,172 @@
+<?php
+/**
+ * Programación por Máquinas — Vista TAKTIK (PRO)
+ * - DataTables server-side
+ * - Modal programación
+ * - Bootstrap 5 + AdminLTE (por layout)
+ */
+?>
+<main class="app-main">
+  <div class="app-content-header border-bottom pb-2">
+    <div class="container-fluid d-flex align-items-center justify-content-between">
+      <div>
+        <h3 class="mb-0">
+          <i class="bi bi-calendar2-week text-primary"></i>
+          Programación por Máquinas
+        </h3>
+        <small class="text-muted">Selecciona una máquina → revisa agenda → programa OT (modal).</small>
+      </div>
+
+      <div>
+        <button class="btn btn-sm btn-primary" id="btn_nueva">
+          <i class="bi bi-plus-lg"></i> Programar OT
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-content pt-3">
+    <div class="container-fluid">
+      <div class="row g-3">
+
+        <div class="col-12 col-lg-5">
+          <div class="card shadow-sm border-0">
+            <div class="card-header bg-white d-flex align-items-center justify-content-between">
+              <div>Máquinas</div>
+              <div class="small text-muted">Click para ver agenda</div>
+            </div>
+
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-sm table-striped align-middle w-100" id="tbl_maquinas">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Código</th>
+                      <th>Nombre</th>
+                      <th>Tipo</th>
+                      <th>Calendario</th>
+                      <th>Activo</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="col-12 col-lg-7">
+          <div class="card shadow-sm border-0">
+            <div class="card-header bg-white d-flex align-items-center justify-content-between">
+              <div>
+                Agenda
+                <span class="badge text-bg-light ms-2" id="lbl_maquina">Selecciona una máquina</span>
+              </div>
+
+              <div class="d-flex align-items-center gap-2">
+                <input type="date" class="form-control form-control-sm" id="f_desde">
+                <input type="date" class="form-control form-control-sm" id="f_hasta">
+                <button class="btn btn-sm btn-outline-secondary" id="btn_filtrar" type="button">
+                  <i class="bi bi-funnel"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-sm table-striped align-middle w-100" id="tbl_agenda">
+  <thead>
+    <tr>
+      <th>Inicio</th>
+      <th>Fin</th>
+      <th>OT</th>
+      <th>Sec</th>
+      <th>Proceso</th>
+      <th class="text-end">Cant</th>
+      <th class="text-end">Setup</th>
+      <th class="text-end">Seg/u</th>
+      <th>Notas</th>
+      <th style="width:120px"></th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+              </div>
+              <div class="small text-muted mt-2">
+                Regla: valida traslapes en la misma máquina.
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Modal Programación -->
+<div class="modal fade" id="mdl_prog" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="mdl_title">Programar OT</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body">
+        <input type="hidden" id="p_id" value="0">
+
+        <div class="row g-2">
+          <div class="col-12 col-md-4">
+            <label class="form-label mb-1">Máquina</label>
+            <select class="form-select form-select-sm" id="p_maquina_id"></select>
+          </div>
+
+          <div class="col-12 col-md-8">
+            <label class="form-label mb-1">OT</label>
+            <div class="input-group input-group-sm">
+              <input class="form-control" id="p_ot_q" placeholder="Buscar OT (folio/desc)...">
+              <button class="btn btn-outline-secondary" id="p_ot_buscar" type="button">
+                <i class="bi bi-search"></i>
+              </button>
+            </div>
+            <select class="form-select form-select-sm mt-2" id="p_ot_id"></select>
+          </div>
+        </div>
+
+        <div class="row g-2 mt-2">
+          <div class="col-12 col-md-6">
+            <label class="form-label mb-1">Fecha inicio</label>
+            <input type="datetime-local" class="form-control form-control-sm" id="p_fi">
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="form-label mb-1">Fecha fin</label>
+            <input type="datetime-local" class="form-control form-control-sm" id="p_ff">
+          </div>
+        </div>
+
+        <div class="mt-2">
+          <label class="form-label mb-1">Notas</label>
+          <input class="form-control form-control-sm" id="p_notas" maxlength="255" placeholder="Notas (opcional)">
+        </div>
+
+        <div class="alert alert-warning mt-3 mb-0">
+          <i class="bi bi-info-circle"></i> Si se cruza con otra programación en la misma máquina, no guarda.
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal" type="button">Cerrar</button>
+        <button class="btn btn-primary btn-sm" id="btn_guardar" type="button">
+          <i class="bi bi-save"></i> Guardar
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>

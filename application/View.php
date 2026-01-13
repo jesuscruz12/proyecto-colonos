@@ -63,10 +63,11 @@ class View
 			'js' => $js
 		);
 
-		if (!$item == 'ajax') {
+		if ($item !== 'ajax') {
 			//opcion uno es para cuando no se desea compartir el layout del lado usuario normal
 			//include_once ROOT .''.$this->_rutas['ruta_general'].'views' .DS .'layout'.DS. DEFAULT_LAYOUT. DS.'header.php';
 			include_once ROOT . 'views' . DS . 'layout' . DS . DEFAULT_LAYOUT . DS . 'header.php';
+			
 		}
 		//obtener las vistas en forma de array	
 		if (is_array($vista) && count($vista)) {
@@ -85,9 +86,11 @@ class View
 			}
 		}
 
-		if (!$item == 'ajax') {
+		if (!$item !== 'ajax')
+			 {
 			//include_once ROOT .''.$this->_rutas['ruta_general'].'views' .DS .'layout'.DS. DEFAULT_LAYOUT. DS.'footer.php';
 			include_once ROOT . 'views' . DS . 'layout' . DS . DEFAULT_LAYOUT . DS . 'footer.php';
+			
 		}
 	}
 	//agregar js de otras vistas

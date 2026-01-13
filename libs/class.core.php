@@ -3,16 +3,19 @@ class CORE
 {
 
   public function head()
-  {
+{
+    // No toques BD. Usa únicamente la sesión creada en el login.
     $data = <<<EOF
-        \$cv_usuario=Session::get('cv_usuario');
-		\$tipo_usuario=Session::get('tipo_usuario');
-		\$info_cuenta=\$this->_usuarios->find(\$cv_usuario);
-			\$data=\$this->_usuarios->where("cv_usuario","=",\$cv_usuario)->get()->toArray();
-			\$this->_view->nombre_usuario=\$data[0]['nombre_usuario'];										
-EOF;
+        \$u = Session::get('usuario') ?: [];
+        // Nombre visible para el layout / header
+        \$this->_view->nombre_usuario = isset(\$u['nombre']) ? \$u['nombre'] : 'Usuario';
+        // (Opcional) Otros datos por si los quieres usar en el layout
+        \$this->_view->email_usuario  = isset(\$u['email']) ? \$u['email'] : '';
+        \$this->_view->rol_usuario    = isset(\$u['rol']) ? (int)\$u['rol'] : 0;
+        \$this->_view->ultimo_login   = isset(\$u['ultimo_login']) ? \$u['ultimo_login'] : '';
+    EOF;
     return $data;
-  }
+}
 
   //imprimir json error....
   public function jsonError($tipo, $texto, $data = null)

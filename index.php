@@ -1,6 +1,6 @@
 <?php
 //version 0.0.7
-ini_set('display_errors',0); //cuando se pase ha produccion cambiar por 0
+ini_set('display_errors',1); //cuando se pase ha produccion cambiar por 0
 //PATRON SINGLETON 
 define('DS', DIRECTORY_SEPARATOR);
 date_default_timezone_set("America/Mexico_City");

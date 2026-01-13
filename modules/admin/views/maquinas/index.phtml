@@ -1,0 +1,146 @@
+<?php
+// C:\xampp\htdocs\qacrmtaktik\modules\admin\views\maquinas\index.phtml
+?>
+<main class="app-main">
+  <div class="app-content-header border-bottom pb-2">
+    <div class="container-fluid d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-wrap">
+      <div>
+        <h3 class="mb-0">
+          <i class="bi bi-cpu text-primary"></i>
+          Máquinas
+        </h3>
+        <div class="text-muted small">Catálogo de máquinas por empresa.</div>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-primary" id="btn_new" type="button">
+          <i class="bi bi-plus-lg me-1"></i> Nueva máquina
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-content pt-3">
+    <div class="container-fluid">
+
+      <div class="card shadow-sm border-0 mb-3">
+        <div class="card-header bg-white d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div class="fw-semibold">Filtros</div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary" id="btn_limpiar" type="button">
+              <i class="bi bi-eraser me-1"></i>Limpiar
+            </button>
+            <button class="btn btn-sm btn-primary" id="btn_filtrar" type="button">
+              <i class="bi bi-funnel me-1"></i>Aplicar
+            </button>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="row g-2">
+            <div class="col-12 col-md-3">
+              <label class="form-label small mb-1">Activo</label>
+              <select class="form-select form-select-sm" id="f_activo">
+                <option value="">Todos</option>
+                <option value="1">Sí</option>
+                <option value="0">No</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label small mb-1">Tipo</label>
+              <select class="form-select form-select-sm" id="f_tipo">
+                <option value="">Todos</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white">Listado</div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle w-100" id="tbl">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Código</th>
+                  <th>Nombre</th>
+                  <th>Tipo</th>
+                  <th>Calendario</th>
+                  <th>Activo</th>
+                  <th>Procesos</th>
+                  <th>Creado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="small text-muted mt-2">Tip: filtra por tipo y usa búsqueda global.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<div class="modal fade" id="modal_maq" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="maq_title">Nueva máquina</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body">
+        <form id="frm_maq" class="needs-validation" novalidate>
+          <input type="hidden" name="id" id="maq_id">
+
+          <div class="row g-2">
+            <div class="col-12 col-md-4">
+              <label class="form-label">Código</label>
+              <input type="text" class="form-control" name="codigo" id="maq_codigo" maxlength="50" placeholder="Opcional">
+              <div class="form-text">Si lo capturas, debe ser único por empresa.</div>
+            </div>
+
+            <div class="col-12 col-md-8">
+              <label class="form-label">Nombre <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" name="nombre" id="maq_nombre" maxlength="150" required>
+              <div class="invalid-feedback">Nombre requerido.</div>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label">Tipo</label>
+              <input type="text" class="form-control" name="tipo" id="maq_tipo" maxlength="80" placeholder="Opcional">
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label">Calendario laboral</label>
+              <select class="form-select" name="calendario_id" id="maq_calendario">
+                <option value="">— Sin calendario —</option>
+              </select>
+              <div class="form-text">Opcional. Si tu operación no usa calendario por máquina, déjalo vacío.</div>
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">Activo</label>
+              <select class="form-select" name="activo" id="maq_activo">
+                <option value="1">sí</option>
+                <option value="0">no</option>
+              </select>
+            </div>
+          </div>
+
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal" type="button">Cerrar</button>
+        <button class="btn btn-primary" id="btn_save" type="button">
+          <i class="bi bi-save me-1"></i> Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

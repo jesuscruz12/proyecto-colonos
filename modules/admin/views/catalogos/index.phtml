@@ -1,0 +1,398 @@
+<main class="app-main">
+
+  <!-- Header -->
+  <div class="app-content-header">
+    <div class="container-fluid">
+      <div class="row align-items-center g-2">
+        <div class="col-12 col-md-7">
+          <div class="d-flex align-items-center gap-3">
+            <div class="app-icon-tile">
+              <i class="bi bi-collection"></i>
+            </div>
+            <div>
+              <h3 class="mb-0">Catálogos</h3>
+              <div class="text-muted small">
+                Administra catálogos del sistema de forma centralizada (crear, editar, activar/desactivar).
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-5">
+          <ol class="breadcrumb float-md-end mb-0">
+            <li class="breadcrumb-item"><a href="<?= BASE_URL; ?>">Home</a></li>
+            <li class="breadcrumb-item active">Catálogos</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="app-content">
+    <div class="container-fluid">
+
+      <!-- TOP BAR -->
+      <div class="card mb-3 shadow-sm border-0">
+        <div class="card-body py-3">
+          <div class="row g-3 align-items-end">
+
+            <!-- Select catálogo -->
+            <div class="col-12 col-lg-5 col-xl-4">
+              <label for="catalogoSelect" class="form-label mb-1 small text-muted">
+                Catálogo
+              </label>
+              <div class="input-group input-group-sm">
+                <select id="catalogoSelect" class="form-select">
+                  <option value="">-- Selecciona --</option>
+                </select>
+                <button id="btnReloadCatalogs" class="btn btn-outline-secondary" type="button" title="Recargar lista">
+                  <i class="bi bi-arrow-clockwise"></i>
+                </button>
+              </div>
+              <div class="form-text small" id="catalogoLabelHint">
+                Selecciona un catálogo para cargar sus registros.
+              </div>
+            </div>
+
+            <!-- Estado / features -->
+            <div class="col-12 col-lg-4 col-xl-4">
+              <div class="d-flex flex-wrap gap-2 align-items-center">
+                <span class="badge text-bg-light border d-inline-flex align-items-center gap-1 px-2 py-2" id="badgeCatalogo">
+                  <i class="bi bi-info-circle"></i> Sin catálogo seleccionado
+                </span>
+
+                <span class="badge text-bg-success d-none d-inline-flex align-items-center gap-1 px-2 py-2" id="badgeActivoSoportado" title="Este catálogo soporta activo (baja lógica)">
+                  <i class="bi bi-toggle-on"></i> Activo/Desactivo
+                </span>
+
+                <span class="badge text-bg-secondary d-none d-inline-flex align-items-center gap-1 px-2 py-2" id="badgeSoloLectura" title="Catálogo protegido (solo lectura)">
+                  <i class="bi bi-lock"></i> Protegido
+                </span>
+
+                <span class="badge text-bg-light border d-none d-inline-flex align-items-center gap-1 px-2 py-2" id="badgeCount"></span>
+              </div>
+
+              <!-- Quick search -->
+              <label class="form-label mb-1 small text-muted mt-2" for="quickSearch">
+                Búsqueda rápida
+              </label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input id="quickSearch" type="text" class="form-control" placeholder="Buscar en la tabla..." disabled>
+                <button id="btnClearSearch" class="btn btn-outline-secondary" type="button" title="Limpiar" disabled>
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+
+              <!-- mini ayuda -->
+              <div class="small text-muted mt-2">
+                Consejo: exporta CSV/JSON antes de cambios masivos.
+              </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="col-12 col-lg-3 col-xl-4 text-lg-end">
+              <div class="d-flex gap-2 justify-content-lg-end flex-wrap">
+                <button id="btnNuevoRegistro" class="btn btn-primary btn-sm" type="button" disabled>
+                  <i class="bi bi-plus-circle me-1"></i> Nuevo
+                </button>
+
+                <button id="btnRefrescarTabla" class="btn btn-outline-secondary btn-sm" type="button" disabled>
+                  <i class="bi bi-arrow-repeat me-1"></i> Refrescar
+                </button>
+
+                <div class="btn-group">
+                  <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="btnMore" disabled>
+                    <i class="bi bi-three-dots-vertical"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                    <li>
+                      <button class="dropdown-item" id="btnExportCsv" type="button" disabled>
+                        <i class="bi bi-filetype-csv me-2"></i> Exportar CSV
+                      </button>
+                    </li>
+                    <li>
+                      <button class="dropdown-item" id="btnExportJson" type="button" disabled>
+                        <i class="bi bi-braces me-2"></i> Exportar JSON
+                      </button>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                      <button class="dropdown-item" id="btnVerEstructura" type="button" disabled>
+                        <i class="bi bi-diagram-3 me-2"></i> Ver estructura
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+
+              </div>
+
+              <div class="small text-muted mt-2" id="tableMetaHint">
+                Selecciona un catálogo para habilitar acciones.
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Alerts -->
+      <div id="catalogosAlert" class="alert d-none" role="alert"></div>
+
+      <!-- MINI KPI (no rompe nada, puro UI) -->
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6 col-xl-3">
+          <div class="mini-kpi">
+            <div class="mini-kpi-ico text-primary bg-primary-subtle"><i class="bi bi-box-seam"></i></div>
+            <div>
+              <div class="mini-kpi-title">Catálogo actual</div>
+              <div class="mini-kpi-value" id="kpiCatalogo">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+          <div class="mini-kpi">
+            <div class="mini-kpi-ico text-success bg-success-subtle"><i class="bi bi-list-check"></i></div>
+            <div>
+              <div class="mini-kpi-title">Registros</div>
+              <div class="mini-kpi-value" id="kpiRegistros">0</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+          <div class="mini-kpi">
+            <div class="mini-kpi-ico text-warning bg-warning-subtle"><i class="bi bi-toggle-on"></i></div>
+            <div>
+              <div class="mini-kpi-title">Estado</div>
+              <div class="mini-kpi-value" id="kpiEstado">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+          <div class="mini-kpi">
+            <div class="mini-kpi-ico text-secondary bg-secondary-subtle"><i class="bi bi-shield-lock"></i></div>
+            <div>
+              <div class="mini-kpi-title">Acceso</div>
+              <div class="mini-kpi-value" id="kpiAcceso">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLE CARD -->
+      <div class="card shadow-sm border-0">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-2">
+            <div class="table-icon">
+              <i class="bi bi-table"></i>
+            </div>
+            <div>
+              <div class="fw-semibold" id="tableTitle">Registros del catálogo</div>
+              <div class="text-muted small" id="tableSubtitle">Selecciona un catálogo para ver los registros.</div>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge text-bg-warning d-none" id="badgePendiente"></span>
+          </div>
+        </div>
+
+        <div class="card-body">
+
+          <!-- Loading skeleton (se activa con JS si quieres) -->
+          <div id="catalogosLoading" class="d-none mb-3">
+            <div class="skeleton-line w-25 mb-2"></div>
+            <div class="skeleton-line w-100 mb-2"></div>
+            <div class="skeleton-line w-75"></div>
+          </div>
+
+          <div class="table-responsive">
+            <table id="catalogosTable" class="table table-striped table-hover table-sm w-100 align-middle">
+              <thead class="table-light">
+                <tr><!-- columnas dinámicas vía JS --></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div class="text-muted small mt-2" id="tableFootNote">
+            Tip: da click en “Editar” para modificar un registro. Para baja lógica usa “Desactivar”.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- MODAL Alta/Edición -->
+<div class="modal fade" id="catalogoModal" tabindex="-1" aria-labelledby="catalogoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <form id="catalogoForm" autocomplete="off">
+        <div class="modal-header">
+          <div>
+            <h5 class="modal-title" id="catalogoModalLabel">
+              <i class="bi bi-pencil-square me-1"></i> Registro de catálogo
+            </h5>
+            <div class="small text-muted" id="catalogoModalSub">
+              Completa los campos y guarda los cambios.
+            </div>
+          </div>
+
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+
+        <div class="modal-body">
+          <input type="hidden" id="catalogoSlug" name="slug">
+          <input type="hidden" id="catalogoId" name="id">
+
+          <!-- Área dinámica -->
+          <div class="row g-3" id="catalogoDynamicFields"></div>
+
+          <!-- Footer interno (info) -->
+          <div class="mt-3 d-none" id="catalogoFormMeta">
+            <div class="border rounded-3 p-2 bg-light small text-muted">
+              <i class="bi bi-info-circle me-1"></i>
+              <span id="catalogoFormMetaText">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer sticky-footer">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle me-1"></i> Cancelar
+          </button>
+
+          <button type="submit" class="btn btn-primary btn-sm" id="btnGuardar">
+            <i class="bi bi-save me-1"></i> Guardar
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Ver estructura -->
+<div class="modal fade" id="estructuraModal" tabindex="-1" aria-labelledby="estructuraModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title" id="estructuraModalLabel">
+            <i class="bi bi-diagram-3 me-1"></i> Estructura del catálogo
+          </h5>
+          <div class="small text-muted" id="estructuraSub">Columnas detectadas</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Campo</th>
+                <th>Tipo</th>
+                <th>Key</th>
+                <th>Extra</th>
+              </tr>
+            </thead>
+            <tbody id="estructuraBody">
+              <tr>
+                <td colspan="4" class="text-muted">Selecciona un catálogo.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
+          Cerrar
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Icon tile del header (más premium, sin depender de colores custom) */
+  .app-icon-tile{
+    width: 44px; height: 44px;
+    border-radius: 14px;
+    display:flex; align-items:center; justify-content:center;
+    background: rgba(13,110,253,.12);
+    color: #0d6efd;
+    box-shadow: 0 10px 25px rgba(0,0,0,.06);
+    font-size: 1.25rem;
+  }
+
+  .table-icon{
+    width: 34px; height: 34px;
+    border-radius: 12px;
+    display:flex; align-items:center; justify-content:center;
+    background: rgba(0,0,0,.05);
+  }
+
+  #catalogosTable td, #catalogosTable th { vertical-align: middle; }
+
+  /* Botoncitos de acciones compactos */
+  #catalogosTable td .btn { padding: .12rem .4rem; font-size: .75rem; }
+
+  /* Alert */
+  #catalogosAlert { margin-bottom: 1rem; }
+
+  /* Que la cabecera no se vea apretada */
+  .card-header .fw-semibold { line-height: 1.1; }
+
+  /* Mini KPI */
+  .mini-kpi{
+    display:flex; gap:12px; align-items:center;
+    border: 1px solid rgba(0,0,0,.08);
+    border-radius: 14px;
+    padding: 12px 14px;
+    background: #fff;
+    box-shadow: 0 10px 25px rgba(0,0,0,.04);
+    height: 100%;
+  }
+  .mini-kpi-ico{
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 1.15rem;
+  }
+  .mini-kpi-title{ font-size: .75rem; color: #6c757d; }
+  .mini-kpi-value{ font-weight: 800; font-size: 1rem; line-height: 1.1; }
+
+  /* Skeleton simple */
+  .skeleton-line{
+    height: 12px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, rgba(0,0,0,.06) 25%, rgba(0,0,0,.12) 37%, rgba(0,0,0,.06) 63%);
+    background-size: 400% 100%;
+    animation: sk 1.2s ease-in-out infinite;
+  }
+  @keyframes sk {
+    0% { background-position: 100% 0; }
+    100% { background-position: 0 0; }
+  }
+
+  /* Sticky footer del modal (mejor UX en forms largos) */
+  .sticky-footer{
+    position: sticky;
+    bottom: 0;
+    background: #fff;
+    border-top: 1px solid rgba(0,0,0,.08);
+  }
+
+  /* Mejor lectura en pantallas chicas */
+  @media (max-width: 576px) {
+    #tableFootNote { display:none; }
+  }
+</style>

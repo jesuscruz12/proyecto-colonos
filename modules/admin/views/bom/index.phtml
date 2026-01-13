@@ -1,0 +1,279 @@
+<?php
+// C:\xampp\htdocs\qacrmtaktik\modules\admin\views\bom\index.phtml
+?>
+<main class="app-main">
+  <div class="app-content-header border-bottom pb-2">
+    <div class="container-fluid d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-wrap">
+      <div>
+        <h3 class="mb-0">
+          <i class="bi bi-boxes text-primary"></i>
+          Versiones BOM
+        </h3>
+        <div class="text-muted small">BOM por producto/subensamble + componentes (parte/subensamble).</div>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-primary" id="btn_new">
+          <i class="bi bi-plus-lg me-1"></i> Nueva versión BOM
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-content pt-3">
+    <div class="container-fluid">
+
+      <!-- Filtros -->
+      <div class="card shadow-sm border-0 mb-3">
+        <div class="card-header bg-white d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div class="fw-semibold">Filtros</div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary" id="btn_limpiar"><i class="bi bi-eraser me-1"></i>Limpiar</button>
+            <button class="btn btn-sm btn-primary" id="btn_filtrar"><i class="bi bi-funnel me-1"></i>Aplicar</button>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="row g-2">
+            <div class="col-12 col-md-3">
+              <label class="form-label small mb-1">Entidad tipo</label>
+              <select class="form-select form-select-sm" id="f_tipo">
+                <option value="">Todas</option>
+                <option value="producto">producto</option>
+                <option value="subensamble">subensamble</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-3">
+              <label class="form-label small mb-1">Entidad ID</label>
+              <input type="number" min="1" step="1" class="form-control form-control-sm" id="f_entidad_id" placeholder="Ej: 2001">
+            </div>
+
+            <div class="col-12 col-md-3">
+              <label class="form-label small mb-1">Vigente</label>
+              <select class="form-select form-select-sm" id="f_vigente">
+                <option value="">Todas</option>
+                <option value="1">Sí</option>
+                <option value="0">No</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla -->
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white">Listado</div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle w-100" id="tbl">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Tipo</th>
+                  <th>Entidad</th>
+                  <th>Versión</th>
+                  <th>Vigente</th>
+                  <th>Componentes</th>
+                  <th>Vigencia</th>
+                  <th>Creado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="small text-muted mt-2">Tip: “Hacer vigente” deja solo 1 vigente por entidad.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- =========================
+  MODAL VERSION BOM
+========================= -->
+<div class="modal fade" id="modal_vb" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="vb_title">Nueva versión BOM</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body">
+        <form id="frm_vb" class="needs-validation" novalidate>
+          <input type="hidden" name="id" id="vb_id">
+
+          <div class="row g-2">
+            <div class="col-12 col-md-4">
+              <label class="form-label">Entidad tipo <span class="text-danger">*</span></label>
+              <select class="form-select" name="entidad_tipo" id="vb_tipo" required>
+                <option value="producto">producto</option>
+                <option value="subensamble">subensamble</option>
+              </select>
+              <div class="invalid-feedback">Requerido.</div>
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">Entidad ID <span class="text-danger">*</span></label>
+              <input type="number" min="1" step="1" class="form-control" name="entidad_id" id="vb_entidad_id" required>
+              <div class="invalid-feedback">Requerido.</div>
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">Versión <span class="text-danger">*</span></label>
+              <input type="text" maxlength="40" class="form-control" name="version" id="vb_version" placeholder="Ej: v1" required>
+              <div class="invalid-feedback">Requerido.</div>
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">Vigente</label>
+              <select class="form-select" name="vigente" id="vb_vigente">
+                <option value="0">no</option>
+                <option value="1">sí</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-4">
+              <label class="form-label">Fecha vigencia</label>
+              <input type="date" class="form-control" name="fecha_vigencia" id="vb_fecha">
+              <div class="form-text">Opcional. Si marcas vigente y no pones fecha, usa hoy.</div>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Notas</label>
+              <input type="text" maxlength="255" class="form-control" name="notas" id="vb_notas" placeholder="Opcional">
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button class="btn btn-primary" id="btn_vb_save">
+          <i class="bi bi-save me-1"></i> Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================
+  MODAL COMPONENTES
+========================= -->
+<div class="modal fade" id="modal_comps" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title">Componentes BOM</h5>
+          <div class="text-muted small">
+            Versión: <b id="comps_vb_label"></b> · ID: <span id="comps_vb_id"></span>
+          </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+          <div class="small text-muted">Agrega partes/subensambles con cantidad y merma.</div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-primary" id="btn_comp_new">
+              <i class="bi bi-plus-lg me-1"></i>Nuevo componente
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle w-100" id="tbl_comps">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Tipo</th>
+                <th>Componente</th>
+                <th>Cantidad</th>
+                <th>Merma %</th>
+                <th>Creado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <input type="hidden" id="comps_version_bom_id" value="">
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================
+  MODAL COMPONENTE (CRUD)
+========================= -->
+<div class="modal fade" id="modal_comp" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="comp_title">Nuevo componente</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body">
+        <form id="frm_comp" class="needs-validation" novalidate>
+          <input type="hidden" name="id" id="comp_id">
+          <input type="hidden" name="version_bom_id" id="comp_version_bom_id">
+
+          <div class="row g-2">
+            <div class="col-12 col-md-4">
+              <label class="form-label">Tipo <span class="text-danger">*</span></label>
+              <select class="form-select" name="componente_tipo" id="comp_tipo" required>
+                <option value="parte">parte</option>
+                <option value="subensamble">subensamble</option>
+              </select>
+              <div class="invalid-feedback">Requerido.</div>
+            </div>
+
+            <div class="col-12 col-md-8">
+              <label class="form-label">Componente <span class="text-danger">*</span></label>
+
+              <!-- Parte -->
+              <select class="form-select" name="parte_id" id="comp_parte">
+                <option value="">— Selecciona parte —</option>
+              </select>
+
+              <!-- Subensamble -->
+              <select class="form-select d-none" name="subensamble_id" id="comp_sub">
+                <option value="">— Selecciona subensamble —</option>
+              </select>
+
+              <div class="form-text">Cambia “Tipo” para ver el selector correcto.</div>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label">Cantidad <span class="text-danger">*</span></label>
+              <input type="number" min="0.0001" step="0.0001" class="form-control" name="cantidad" id="comp_cant" value="1.0000" required>
+              <div class="invalid-feedback">Requerido (>0).</div>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label">Merma %</label>
+              <input type="number" min="0" step="0.001" class="form-control" name="merma_pct" id="comp_merma" value="0.000">
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button class="btn btn-primary" id="btn_comp_save">
+          <i class="bi bi-save me-1"></i> Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

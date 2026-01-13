@@ -1,0 +1,759 @@
+<?php
+/**
+ * modules/admin/views/reportes/accidente_ficha_pdf.phtml
+ *
+ * Replica el formato físico:
+ *   “PARTE DE HECHO DE TRÁNSITO” + “ANEXO - Parte de Hecho de Tránsito”
+ *
+ * Usa:
+ *   $accidente, $oficial, $vehiculos, $personas,
+ *   $conductores, $peatones, $ocupantes,
+ *   $croquis, $evidencias, $anexos
+ *
+ * Producción:
+ * - Renderiza SOLO vehículos existentes (no rellena 4).
+ * - Soporta firmas de conductores (firma_data / firma_url).
+ */
+
+if (!function_exists('e')) {
+    function e($v) {
+        return htmlspecialchars((string)($v ?? ''), ENT_QUOTES, 'UTF-8');
+    }
+}
+
+/**
+ * URL pública de archivo.
+ */
+if (!function_exists('buildArchivoUrlPhp')) {
+    function buildArchivoUrlPhp(?array $row): ?string
+    {
+        if (!$row) return null;
+
+        $path = $row['archivo_path'] ?? $row['path_relativo'] ?? '';
+        $path = trim((string)$path);
+        if ($path === '' || $path === '0') return null;
+
+        // URL completa
+        if (preg_match('#^https?://#i', $path)) return $path;
+
+        $path = ltrim($path, '/');
+        $path = preg_replace('#^uploads/#i', '', $path);
+
+        if (!defined('LINK_API')) return null;
+        return rtrim(LINK_API, '/') . '/uploads/' . $path;
+    }
+}
+
+/**
+ * Checkbox estilo X.
+ */
+if (!function_exists('cb_mark')) {
+    function cb_mark($cond): string {
+        return $cond ? 'X' : '';
+    }
+}
+
+/**
+ * Render de firma (data uri o url).
+ */
+if (!function_exists('renderFirmaImg')) {
+    function renderFirmaImg($conductor): string
+    {
+        if (!is_array($conductor)) return '';
+
+        $src = '';
+        if (!empty($conductor['firma_data'])) {
+            $src = (string)$conductor['firma_data'];
+        } elseif (!empty($conductor['firma_url'])) {
+            $src = (string)$conductor['firma_url'];
+        }
+
+        $src = trim($src);
+        if ($src === '' || $src === '0') return '';
+
+        // Si viene base64 “pelón”
+        if (stripos($src, 'data:image') !== 0 && !preg_match('#^https?://#i', $src)) {
+            $src = 'data:image/png;base64,' . $src;
+        }
+
+        return '<div style="margin-top:6px; text-align:center;">'
+             . '<img src="' . e($src) . '" style="max-width:170px; max-height:70px;">'
+             . '</div>';
+    }
+}
+
+/**
+ * Devuelve texto limpio: si viene 0/null/vacío, devuelve ''.
+ */
+if (!function_exists('clean0')) {
+    function clean0($v): string {
+        if (is_null($v)) return '';
+        if ($v === 0 || $v === '0') return '';
+        $s = trim((string)$v);
+        return ($s === '' || $s === '0') ? '' : $s;
+    }
+}
+
+/* ====== Helpers de fecha / hora ====== */
+$fecha      = $accidente['fecha']            ?? null;
+$horaRep    = $accidente['hora_reporte']     ?? '';
+$horaAsig   = $accidente['hora_asignacion']  ?? '';
+$horaArr    = $accidente['hora_arribo']      ?? '';
+$horaTerm   = $accidente['hora_termino']     ?? '';
+
+$fechaTexto = $fecha ? date('d/m/Y', strtotime($fecha)) : '';
+$diaNum     = $fecha ? (int)date('N', strtotime($fecha)) : 0;
+$diasSemana = [1=>'L', 'M', 'M', 'J', 'V', 'S', 'D'];
+$diaLetra   = $diaNum ? ($diasSemana[$diaNum] ?? '') : '';
+
+$folio      = $accidente['folio'] ?? ('ACC-' . ($accidente['id'] ?? ''));
+$municipio  = $accidente['municipio_nombre'] ?? '';
+$tipoHecho  = $accidente['tipo_hecho_nombre'] ?? '';
+$severidad  = $accidente['severidad_nombre'] ?? '';
+$estatus    = $accidente['estatus_nombre'] ?? ($accidente['estatus'] ?? '');
+
+$referencia = $accidente['referencia'] ?? '';
+$latlng     = trim((string)($accidente['lat'] ?? '') . ' / ' . (string)($accidente['lng'] ?? ''));
+
+$lesTot     = (int)($accidente['lesionados_total'] ?? 0);
+$falleTot   = (int)($accidente['fallecidos_total'] ?? 0);
+
+$climaTxt   = $accidente['clima_nombre'] ?? ($accidente['clima_id'] ?? '');
+$sentidoTxt = $accidente['sentido_circulacion_nombre'] ?? ($accidente['sentido_circulacion_id'] ?? '');
+
+$hayLesionados = $lesTot > 0;
+$hayFallecidos = $falleTot > 0;
+
+/* ====== Normalizaciones seguras ====== */
+$vehiculos   = is_array($vehiculos)   ? array_values($vehiculos)   : [];
+$personas    = is_array($personas)    ? array_values($personas)    : [];
+$conductores = is_array($conductores) ? array_values($conductores) : [];
+$peatones    = is_array($peatones)    ? array_values($peatones)    : [];
+$ocupantes   = is_array($ocupantes)   ? array_values($ocupantes)   : [];
+
+// Inferencias desde personas si hiciera falta
+if (!$conductores && $personas) {
+    $conductores = array_values(array_filter($personas, fn($p) => ($p['rol'] ?? '') === 'Conductor'));
+}
+if (!$peatones && $personas) {
+    $peatones = array_values(array_filter($personas, fn($p) => ($p['rol'] ?? '') === 'Peatón'));
+}
+if (!$ocupantes && $personas) {
+    $ocupantes = array_values(array_filter($personas, fn($p) => ($p['rol'] ?? '') === 'Ocupante'));
+}
+
+/* ====== Mapas útiles ====== */
+
+// vehiculo_id -> conductor[]
+$conductoresByVehiculoId = [];
+foreach ($conductores as $c) {
+    if (!empty($c['vehiculo_id'])) {
+        $vid = (int)$c['vehiculo_id'];
+        if (!isset($conductoresByVehiculoId[$vid])) $conductoresByVehiculoId[$vid] = [];
+        $conductoresByVehiculoId[$vid][] = $c;
+    }
+}
+
+// indice -> vehiculo
+$vehiculoByIndice = [];
+foreach ($vehiculos as $v) {
+    $idx = (int)($v['indice'] ?? 0);
+    if ($idx > 0) $vehiculoByIndice[$idx] = $v;
+}
+
+// Conductor por índice de vehículo (1/2) con prioridad a vehiculo_id match
+function conductorPorVehiculoIndice($indiceVeh, $vehiculoByIndice, $conductoresByVehiculoId, $conductores)
+{
+    $indiceVeh = (int)$indiceVeh;
+    if ($indiceVeh <= 0) return null;
+
+    $v = $vehiculoByIndice[$indiceVeh] ?? null;
+    if ($v && !empty($v['id'])) {
+        $vid = (int)$v['id'];
+        if ($vid && isset($conductoresByVehiculoId[$vid]) && !empty($conductoresByVehiculoId[$vid][0])) {
+            return $conductoresByVehiculoId[$vid][0];
+        }
+    }
+
+    // fallback: por orden (solo si existe)
+    return $conductores[$indiceVeh - 1] ?? null;
+}
+
+$conductor1 = conductorPorVehiculoIndice(1, $vehiculoByIndice, $conductoresByVehiculoId, $conductores);
+$conductor2 = conductorPorVehiculoIndice(2, $vehiculoByIndice, $conductoresByVehiculoId, $conductores);
+
+$peatonPrincipal = $peatones[0] ?? null;
+$ocupante1 = $ocupantes[0] ?? null;
+$ocupante2 = $ocupantes[1] ?? null;
+
+$croquisPath = buildArchivoUrlPhp(is_array($croquis) ? $croquis : null);
+
+/* ====== Render de bloque de vehículo (recibe el vehículo real) ====== */
+function renderVehiculoBloqueVehiculo($v, $conductoresByVehiculoId, $conductores)
+{
+    if (!is_array($v) || empty($v['id'])) return;
+
+    $numVeh = (int)($v['indice'] ?? 0);
+    if ($numVeh <= 0) $numVeh = 1;
+
+    // Conductor asociado
+    $c = [];
+    $vid = (int)$v['id'];
+    if ($vid && isset($conductoresByVehiculoId[$vid]) && !empty($conductoresByVehiculoId[$vid][0])) {
+        $c = $conductoresByVehiculoId[$vid][0];
+    } elseif (isset($conductores[$numVeh - 1])) {
+        $c = $conductores[$numVeh - 1];
+    }
+
+    // “0” nunca se imprime
+    $aDisp = clean0($v['a_disposicion'] ?? '');
+?>
+<div class="seccion">D. DATOS DEL VEHÍCULO <?= (int)$numVeh ?></div>
+<table class="borde">
+    <tr>
+        <td class="sub w-20">Tipo de vehículo</td>
+        <td class="w-30"><?= e($v['tipo_vehiculo_nombre'] ?? $v['tipo_vehiculo_id'] ?? '') ?></td>
+        <td class="sub w-20">PARTICULAR / PÚBLICO</td>
+        <td class="w-30"><?= e($v['particular_publico'] ?? '') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Nombre del propietario</td>
+        <td colspan="3"><?= e($v['propietario_nombre'] ?? '') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Domicilio</td>
+        <td colspan="3"><?= e($v['propietario_domicilio'] ?? '') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Teléfono</td>
+        <td><?= e($v['propietario_telefono'] ?? '') ?></td>
+        <td class="sub">A disposición de</td>
+        <td><?= e($aDisp) ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Placas</td>
+        <td><?= e($v['placas'] ?? '') ?></td>
+        <td class="sub">Estado</td>
+        <td><?= e($v['estado_placas'] ?? '') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">No. de serie</td>
+        <td><?= e($v['serie'] ?? '') ?></td>
+        <td class="sub">Marca</td>
+        <td><?= e($v['marca_nombre'] ?? $v['marca_id'] ?? '') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Tipo</td>
+        <td><?= e($v['tipo_vehiculo_nombre'] ?? '') ?></td>
+        <td class="sub">Modelo</td>
+        <td><?= e(trim((string)($v['modelo'] ?? '') . ' ' . (string)($v['modelo_anio'] ?? ''))) ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Color</td>
+        <td><?= e($v['color_nombre'] ?? $v['color_id'] ?? '') ?></td>
+        <td class="sub">Uso de grúa</td>
+        <td><?= e($v['uso_grua'] ?? '') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Tipo de carga</td>
+        <td><?= e($v['tipo_carga'] ?? '') ?></td>
+        <td class="sub">Asegurado SÍ/NO</td>
+        <td><?= e($v['asegurado'] ?? '') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Compañía</td>
+        <td><?= e($v['aseguradora'] ?? '') ?></td>
+        <td class="sub">No. Póliza / Vigente</td>
+        <td>
+            <?= e($v['poliza_numero'] ?? '') ?>
+            &nbsp; / &nbsp;
+            <?= e($v['poliza_vigente'] ?? '') ?>
+        </td>
+    </tr>
+</table>
+
+<table class="borde">
+    <tr>
+        <td colspan="4" class="sub">Datos del conductor</td>
+    </tr>
+    <tr>
+        <td class="sub w-20">Nombre</td>
+        <td class="w-40"><?= e($c['nombre'] ?? '') ?></td>
+        <td class="sub w-20">Edad</td>
+        <td class="w-20"><?= e($c['edad'] ?? '') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Domicilio</td>
+        <td colspan="3"><?= e($c['domicilio'] ?? '') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Teléfono</td>
+        <td><?= e($c['telefono'] ?? '') ?></td>
+        <td class="sub">Sexo F / M</td>
+        <td><?= e($c['sexo'] ?? '') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">No. de infracción</td>
+        <td><?= e($c['no_infraccion'] ?? '') ?></td>
+        <td class="sub">Licencia SÍ/NO Vigente</td>
+        <td>
+            Lic.: <?= isset($c['licencia_si']) ? ($c['licencia_si'] ? 'SÍ' : 'NO') : '' ?>
+            &nbsp; / Vig.: <?= isset($c['licencia_vigente']) ? ($c['licencia_vigente'] ? 'SÍ' : 'NO') : '' ?>
+        </td>
+    </tr>
+    <tr>
+        <td class="sub">No. Licencia</td>
+        <td><?= e($c['licencia_numero'] ?? '') ?></td>
+        <td class="sub">Tipo / Estado</td>
+        <td><?= e(trim((string)($c['licencia_tipo'] ?? '') . ' ' . (string)($c['licencia_estado'] ?? ''))) ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Lesionado SÍ/NO/Fallecido</td>
+        <td><?= e($c['lesionado'] ?? $c['lesiones'] ?? '') ?></td>
+        <td class="sub">Trasladado por / a</td>
+        <td><?= e(trim((string)($c['trasladado_por'] ?? '') . ' / ' . (string)($c['trasladado_a'] ?? ''))) ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Conductor a disposición de</td>
+        <td><?= e($c['disposicion'] ?? '') ?></td>
+        <td class="sub">Custodia SÍ/NO</td>
+        <td><?= e($c['custodia'] ?? '') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Manifestación de hechos</td>
+        <td colspan="3"><?= e($c['manifestacion_hechos'] ?? '') ?></td>
+    </tr>
+</table>
+<?php
+} // end renderVehiculoBloqueVehiculo
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>Parte de Hecho de Tránsito <?= e($folio) ?></title>
+    <style>
+        * { box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; font-size: 10px; }
+        body { margin: 10px; }
+        table { width: 100%; border-collapse: collapse; }
+        .borde td, .borde th { border: 0.5px solid #000; padding: 2px 3px; }
+        .header-top { width: 100%; margin-bottom: 4px; }
+        .header-top td { vertical-align: top; font-size: 9px; }
+        .titulo-formato { text-align: center; font-weight: bold; font-size: 13px; }
+        .seccion { background: #e5e5e5; font-weight: bold; border: 0.5px solid #000; padding: 2px 3px; margin-top: 4px; margin-bottom: 0; }
+        .sub { font-weight: bold; }
+        .small { font-size: 8px; }
+        .w-15 { width: 15%; } .w-20 { width: 20%; } .w-25 { width: 25%; } .w-30 { width: 30%; } .w-40 { width: 40%; }
+        .center { text-align: center; } .right { text-align: right; }
+        .page-break { page-break-after: always; }
+        .lineas { min-height: 160px; border: 0.5px solid #000; }
+        .lineas div { border-bottom: 0.3px solid #ccc; height: 10px; }
+        .firma-linea { border-top: 0.5px solid #000; font-size: 8px; text-align: center; padding-top: 2px; margin-top: 10px; }
+
+        .grid-outer { border: 0.5px solid #000; height: 540px; }
+        .grid-row { border-bottom: 0.5px solid #ddd; height: 18px; }
+        .grid-cell { display: inline-block; width: 3.33%; height: 100%; border-right: 0.5px solid #ddd; }
+        .grid-cell:last-child { border-right: none; }
+
+        .img-responsive { display: block; margin: 0 auto; max-width: 100%; height: auto; border: 0.5px solid #000; }
+    </style>
+</head>
+<body>
+
+<!-- =========================================================
+     HOJA 1 – PARTE DE HECHO DE TRÁNSITO (frente)
+     ========================================================= -->
+<table class="header-top">
+    <tr>
+        <td>
+            <strong>Gobierno de Monterrey</strong><br>
+            (Escudo / logo aquí)
+        </td>
+        <td class="titulo-formato">Parte de Hecho de Tránsito</td>
+        <td class="right">
+            <span class="small">SECRETARÍA DE SEGURIDAD Y PROTECCIÓN A LA CIUDADANÍA<br>Dirección de Vialidad y Tránsito</span><br>
+            Folio No.: <strong><?= e($folio) ?></strong>
+        </td>
+    </tr>
+</table>
+
+<table class="borde">
+    <tr>
+        <td class="w-25 sub">Número de parte:</td>
+        <td class="w-25"><?= e($accidente['numero_parte'] ?? '') ?></td>
+        <td class="w-15 sub">Fecha:</td>
+        <td class="w-15"><?= e($fechaTexto) ?></td>
+        <td class="w-20 sub">DÍA:&nbsp;&nbsp;D L M M J V S</td>
+        <td class="w-10 center"><?= e($diaLetra) ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Hora de reporte:</td>
+        <td><?= e($horaRep) ?></td>
+        <td class="sub">Hora de asignación:</td>
+        <td><?= e($horaAsig) ?></td>
+        <td class="sub">Hora arribo:</td>
+        <td><?= e($horaArr) ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Hora de término:</td>
+        <td><?= e($horaTerm) ?></td>
+        <td class="sub">Finiquitado / En trámite:</td>
+        <td colspan="3"><?= e($accidente['estado_evento'] ?? '') ?></td>
+    </tr>
+</table>
+
+<div class="seccion">A. GENERALIDADES</div>
+<table class="borde">
+    <tr>
+        <td class="w-20 sub">Entre calles:</td>
+        <td class="w-40"><?= e($accidente['entre_calle_a'] ?? '') ?></td>
+        <td class="w-10 center sub">y</td>
+        <td class="w-30"><?= e($accidente['entre_calle_b'] ?? '') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Colonia:</td>
+        <td colspan="3"><?= e($accidente['colonia'] ?? '') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Referencia:</td>
+        <td colspan="3"><?= e($referencia) ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Coordenadas:</td>
+        <td><?= e($latlng) ?></td>
+        <td class="sub">Municipio:</td>
+        <td><?= e($municipio) ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Tipo de vía:</td>
+        <td><?= e($accidente['tipo_via_nombre'] ?? '') ?></td>
+        <td class="sub">Pavimentada / No pavimentada:</td>
+        <td><?= e($accidente['pavimentada'] ?? '') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Sentido de circulación:</td>
+        <td><?= e($sentidoTxt) ?></td>
+        <td class="sub">Lesionados (SÍ/NO/Total):</td>
+        <td>
+            SÍ <?= cb_mark($hayLesionados) ?> /
+            NO <?= cb_mark(!$hayLesionados) ?> /
+            Total: <?= (int)$lesTot ?>
+        </td>
+    </tr>
+    <tr>
+        <td class="sub">Fallecidos (SÍ/NO/Total):</td>
+        <td colspan="3">
+            SÍ <?= cb_mark($hayFallecidos) ?> /
+            NO <?= cb_mark(!$hayFallecidos) ?> /
+            Total: <?= (int)$falleTot ?>
+        </td>
+    </tr>
+</table>
+
+<div class="seccion">B. TIPO DE HECHO DE TRÁNSITO</div>
+<table class="borde">
+    <tr>
+        <td class="sub w-20">Tipo de hecho:</td>
+        <td><?= e($tipoHecho) ?></td>
+    </tr>
+</table>
+
+<div class="seccion">C. CONDICIÓN DEL CLIMA</div>
+<table class="borde">
+    <tr>
+        <td class="sub w-20">Condición del clima:</td>
+        <td><?= e($climaTxt) ?></td>
+    </tr>
+</table>
+
+<?php
+// =========================================================
+// VEHÍCULOS — SOLO LOS EXISTENTES
+// - HOJA 1: primeros 2
+// - HOJA 2: siguientes (si hay)
+// =========================================================
+$vehiculos_hoja1 = array_slice($vehiculos, 0, 2);
+$vehiculos_hoja2 = array_slice($vehiculos, 2);
+
+foreach ($vehiculos_hoja1 as $v) {
+    renderVehiculoBloqueVehiculo($v, $conductoresByVehiculoId, $conductores);
+}
+?>
+
+<?php if (!empty($vehiculos_hoja2) || !empty($ocupantes)): ?>
+<div class="page-break"></div>
+
+<!-- =========================================================
+     HOJA 2 – ANEXO (Vehículos restantes + Ocupantes)
+     ========================================================= -->
+<table class="header-top">
+    <tr>
+        <td><strong>Gobierno de Monterrey</strong></td>
+        <td class="titulo-formato">ANEXO - Parte de Hecho de Tránsito</td>
+        <td class="right">Folio No.: <strong><?= e($folio) ?></strong></td>
+    </tr>
+</table>
+
+<?php
+foreach ($vehiculos_hoja2 as $v) {
+    renderVehiculoBloqueVehiculo($v, $conductoresByVehiculoId, $conductores);
+}
+?>
+
+<div class="seccion">E1. OCUPANTE</div>
+<table class="borde">
+    <tr>
+        <td class="sub w-20">Vehículo No.</td>
+        <td class="w-30"><?= e($ocupante1['vehiculo_indice'] ?? $ocupante1['vehiculo_id'] ?? '') ?></td>
+        <td class="sub w-20">LESIONADO SÍ/NO/Fallecido</td>
+        <td class="w-30"><?= e($ocupante1['lesionado'] ?? $ocupante1['lesiones'] ?? 'Sin dato') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Nombre</td>
+        <td colspan="3"><?= e($ocupante1['nombre'] ?? 'Sin dato') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Domicilio</td>
+        <td colspan="3"><?= e($ocupante1['domicilio'] ?? '') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Edad</td>
+        <td><?= e($ocupante1['edad'] ?? '') ?></td>
+        <td class="sub">Sexo F / M</td>
+        <td><?= e($ocupante1['sexo'] ?? '') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Teléfono</td>
+        <td><?= e($ocupante1['telefono'] ?? '') ?></td>
+        <td class="sub">Trasladado a / No. Eco.</td>
+        <td><?= e(trim((string)($ocupante1['trasladado_a'] ?? '') . ' / ' . (string)($ocupante1['no_eco'] ?? ''))) ?></td>
+    </tr>
+</table>
+
+<div class="seccion">E2. OCUPANTE</div>
+<table class="borde">
+    <tr>
+        <td class="sub w-20">Vehículo No.</td>
+        <td class="w-30"><?= e($ocupante2['vehiculo_indice'] ?? $ocupante2['vehiculo_id'] ?? '') ?></td>
+        <td class="sub w-20">LESIONADO SÍ/NO/Fallecido</td>
+        <td class="w-30"><?= e($ocupante2['lesionado'] ?? $ocupante2['lesiones'] ?? 'Sin dato') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Nombre</td>
+        <td colspan="3"><?= e($ocupante2['nombre'] ?? 'Sin dato') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Domicilio</td>
+        <td colspan="3"><?= e($ocupante2['domicilio'] ?? '') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Edad</td>
+        <td><?= e($ocupante2['edad'] ?? '') ?></td>
+        <td class="sub">Sexo F / M</td>
+        <td><?= e($ocupante2['sexo'] ?? '') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Teléfono</td>
+        <td><?= e($ocupante2['telefono'] ?? '') ?></td>
+        <td class="sub">Trasladado a / No. Eco.</td>
+        <td><?= e(trim((string)($ocupante2['trasladado_a'] ?? '') . ' / ' . (string)($ocupante2['no_eco'] ?? ''))) ?></td>
+    </tr>
+</table>
+<?php endif; ?>
+
+<div class="page-break"></div>
+
+<!-- =========================================================
+     HOJA 3 – ANEXO (Peatón / Daños / Causas / Observaciones + FIRMAS)
+     ========================================================= -->
+<table class="header-top">
+    <tr>
+        <td><strong>Gobierno de Monterrey</strong></td>
+        <td class="titulo-formato">ANEXO - Parte de Hecho de Tránsito</td>
+        <td class="right">Folio No.: <strong><?= e($folio) ?></strong></td>
+    </tr>
+</table>
+
+<div class="seccion">F. PEATÓN</div>
+<table class="borde">
+    <tr>
+        <td class="sub w-15">Nombre</td>
+        <td class="w-35"><?= e($peatonPrincipal['nombre'] ?? 'Sin dato') ?></td>
+        <td class="sub w-15">LESIONADO SÍ/NO/Fallecido</td>
+        <td class="w-35"><?= e($peatonPrincipal['lesionado'] ?? $peatonPrincipal['lesiones'] ?? 'Sin dato') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Domicilio</td>
+        <td colspan="3"><?= e($peatonPrincipal['domicilio'] ?? '') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Iba desde (lado)</td>
+        <td><?= e($peatonPrincipal['iba_desde'] ?? '') ?></td>
+        <td class="sub">Hacia (lado)</td>
+        <td><?= e($peatonPrincipal['hacia'] ?? '') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Atendido por</td>
+        <td><?= e($peatonPrincipal['atendido_por'] ?? '') ?></td>
+        <td class="sub">Trasladado a / No. Eco.</td>
+        <td><?= e(trim((string)($peatonPrincipal['trasladado_a'] ?? '') . ' / ' . (string)($peatonPrincipal['no_eco'] ?? ''))) ?></td>
+    </tr>
+</table>
+
+<div class="seccion">G. DAÑOS MATERIALES</div>
+<table class="borde">
+    <tr>
+        <td class="sub w-20">Daños a:</td>
+        <td>1-Particulares &nbsp; 2-Municipio &nbsp; 3-Estado &nbsp; 4-Federación</td>
+    </tr>
+    <tr>
+        <td class="sub">Consistentes en:</td>
+        <td><?= e($accidente['danos_descripcion'] ?? '') ?></td>
+    </tr>
+</table>
+
+<div class="seccion">H. PROBABLES CAUSAS DEL HECHO DE TRÁNSITO</div>
+<table class="borde">
+    <tr>
+        <td class="small">
+            1-No guardó distancia &nbsp; 2-Pérdida de control &nbsp; 3-No respetó alto &nbsp; 4-No respetó luz roja &nbsp;
+            5-Invasión de carril &nbsp; 6-Invasión parcial de carril &nbsp; 7-Estado de ebriedad &nbsp; 8-Falta de pericia &nbsp;
+            9-Exceso de velocidad &nbsp; 10-Distracción &nbsp; 11-Incendio &nbsp; 12-Falla de vehículo &nbsp;
+            13-Peatón &nbsp; 14-Condición del camino &nbsp; 15-Otro
+        </td>
+    </tr>
+    <tr>
+        <td class="sub">
+            Seleccionado / comentario:
+            <?= e($accidente['causas_probables'] ?? $accidente['causa_probable'] ?? '') ?>
+        </td>
+    </tr>
+</table>
+
+<div class="seccion">Observaciones</div>
+<div class="lineas">
+<?php
+$obs = trim((string)($accidente['observaciones'] ?? ''));
+if ($obs !== ''):
+    $lineas = explode("\n", wordwrap($obs, 120));
+    foreach ($lineas as $l): ?>
+        <div><?= e($l) ?></div>
+    <?php endforeach;
+else:
+    for ($i = 0; $i < 14; $i++): ?>
+        <div>&nbsp;</div>
+    <?php endfor;
+endif;
+?>
+</div>
+
+<table style="width:100%; margin-top: 10px;">
+    <tr>
+        <td class="w-30" style="vertical-align:top;">
+            <div class="firma-linea">
+                Nombre de conductor del vehículo No. 1<br>
+                <?= e($conductor1['nombre'] ?? '') ?>
+                <?= renderFirmaImg($conductor1 ?? []) ?>
+            </div>
+        </td>
+        <td class="w-40" style="vertical-align:top;">
+            <div class="firma-linea">
+                Oficial de Tránsito<br>
+                <?= e($oficial['nombre_completo'] ?? '') ?>
+                <?php if (!empty($oficial['numero'])): ?>
+                    &nbsp; Núm.: <?= e($oficial['numero']) ?>
+                <?php endif; ?>
+            </div>
+        </td>
+        <td class="w-30" style="vertical-align:top;">
+            <div class="firma-linea">
+                Nombre de conductor del vehículo No. 2<br>
+                <?= e($conductor2['nombre'] ?? '') ?>
+                <?= renderFirmaImg($conductor2 ?? []) ?>
+            </div>
+        </td>
+    </tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- =========================================================
+     HOJA 4 – CROQUIS (+ firmas)
+     ========================================================= -->
+<table class="header-top">
+    <tr>
+        <td><strong>Gobierno de Monterrey</strong></td>
+        <td class="titulo-formato">ANEXO - Parte de Hecho de Tránsito</td>
+        <td class="right">Folio No.: <strong><?= e($folio) ?></strong></td>
+    </tr>
+</table>
+
+<div class="seccion">I. CROQUIS</div>
+
+<?php if ($croquisPath): ?>
+    <img src="<?= e($croquisPath) ?>" alt="Croquis del accidente" class="img-responsive" style="max-height: 650px;">
+<?php else: ?>
+    <div class="grid-outer">
+        <?php for ($r = 0; $r < 25; $r++): ?>
+            <div class="grid-row">
+                <?php for ($c = 0; $c < 30; $c++): ?>
+                    <span class="grid-cell"></span>
+                <?php endfor; ?>
+            </div>
+        <?php endfor; ?>
+    </div>
+<?php endif; ?>
+
+<table class="borde" style="margin-top:6px;">
+    <tr>
+        <td class="sub w-30">Condiciones de la superficie de rodamiento:</td>
+        <td><?= e($accidente['superficie_rodamiento'] ?? '') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Señalamientos:</td>
+        <td><?= e($accidente['senalamiento'] ?? '') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Iluminación:</td>
+        <td><?= e($accidente['iluminacion_descripcion'] ?? '') ?></td>
+    </tr>
+    <tr>
+        <td class="sub">Observaciones:</td>
+        <td><?= e($accidente['observaciones_croquis'] ?? '') ?></td>
+    </tr>
+</table>
+
+<table style="width:100%; margin-top: 10px;">
+    <tr>
+        <td class="w-30" style="vertical-align:top;">
+            <div class="firma-linea">
+                Nombre de conductor del vehículo No. 1<br>
+                <?= e($conductor1['nombre'] ?? '') ?>
+                <?= renderFirmaImg($conductor1 ?? []) ?>
+            </div>
+        </td>
+        <td class="w-40" style="vertical-align:top;">
+            <div class="firma-linea">
+                Oficial de Tránsito<br>
+                <?= e($oficial['nombre_completo'] ?? '') ?>
+                <?php if (!empty($oficial['numero'])): ?>
+                    &nbsp; Núm.: <?= e($oficial['numero']) ?>
+                <?php endif; ?>
+            </div>
+        </td>
+        <td class="w-30" style="vertical-align:top;">
+            <div class="firma-linea">
+                Nombre de conductor del vehículo No. 2<br>
+                <?= e($conductor2['nombre'] ?? '') ?>
+                <?= renderFirmaImg($conductor2 ?? []) ?>
+            </div>
+        </td>
+    </tr>
+</table>
+
+<p class="small center" style="margin-top:6px;">
+    Generado desde CRM Tránsito — <?= date('Y-m-d H:i:s') ?>
+</p>
+
+</body>
+</html>

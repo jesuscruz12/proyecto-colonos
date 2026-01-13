@@ -1,58 +1,62 @@
 <?php
+
 class Session
 {
-    // public static function init()
-    // {
-    //     //iniciar sesion 
-    //     session_set_cookie_params(0, '/', 'localhost');//likephone.mx
-    //     session_name('crm_session');
-    //     session_start();
-    // }
-
     public static function init()
     {
-        //iniciar sesion 
-        session_start();
+        if (session_status() === PHP_SESSION_NONE) {
+            // Si quieres cookies estrictas (opcional):
+            // ini_set('session.cookie_httponly', '1');
+            // ini_set('session.use_only_cookies', '1');
+
+            session_start();
+        }
     }
 
-    //metodo para destruir una variable de sesion
+    // Destruir sesión completa o claves específicas
     public static function destroy($clave = false)
     {
         if ($clave) {
             if (is_array($clave)) {
-                for ($i = 0; i < count($clave); $i++) {
-                    //si existe variable de sesion 
+                for ($i = 0; $i < count($clave); $i++) {   // ✅ FIX
                     if (isset($_SESSION[$clave[$i]])) {
                         unset($_SESSION[$clave[$i]]);
                     }
                 }
-            }
-            //sino es un arreglo
-            else {
+            } else {
                 if (isset($_SESSION[$clave])) {
                     unset($_SESSION[$clave]);
                 }
             }
-        } else {
-            session_destroy();
+            return;
         }
+
+        // Destruir TODO
+        $_SESSION = [];
+
+        if (ini_get('session.use_cookies')) {
+            $p = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000, $p['path'], $p['domain'], $p['secure'], $p['httponly']);
+        }
+
+        session_destroy();
     }
-    //asignar valor a una clave
+
     public static function set($clave, $valor)
     {
-        if (!empty($clave)) {
+        if ($clave !== '' && $clave !== null) {
             $_SESSION[$clave] = $valor;
         }
     }
-    //obtener valor de la sesion
+
     public static function get($clave)
     {
-        if (isset($_SESSION[$clave])) {
-            return $_SESSION[$clave];
-        }
+        return $_SESSION[$clave] ?? null;
     }
 
-
+    // ============================
+    // Acceso (legacy)
+    // ============================
     public static function acceso($level)
     {
         if (!Session::get('autenticado')) {
@@ -68,28 +72,24 @@ class Session
 
     public static function accesoView($level)
     {
-        if (!Session::get('autenticado')) {
-            return false;
-        }
-
-        if (Session::getLevel($level) > Session::getLevel(Session::get('level'))) {
-            return false;
-        }
-
+        if (!Session::get('autenticado')) return false;
+        if (Session::getLevel($level) > Session::getLevel(Session::get('level'))) return false;
         return true;
     }
-    //niveles de acceso roles
+
     public static function getLevel($level)
     {
-        $role['admin'] = 3;
-        $role['especial'] = 2;
-        $role['usuario'] = 1;
+        $role = [
+            'admin'     => 3,
+            'especial'  => 2,
+            'usuario'   => 1
+        ];
 
         if (!array_key_exists($level, $role)) {
             throw new Exception('Error de acceso');
-        } else {
-            return $role[$level];
         }
+
+        return $role[$level];
     }
 
     public static function accesoEstricto(array $level, $noAdmin = false)
@@ -101,58 +101,63 @@ class Session
 
         Session::tiempo();
 
-        if ($noAdmin == false) {
-            if (Session::get('level') == 'admin') {
-                return;
-            }
+        if ($noAdmin == false && Session::get('level') == 'admin') {
+            return;
         }
 
-        if (count($level)) {
-            if (in_array(Session::get('level'), $level)) {
-                return;
-            }
+        if (count($level) && in_array(Session::get('level'), $level)) {
+            return;
         }
 
         header('location:' . BASE_URL . 'error/access/5050');
+        exit;
     }
-
 
     public static function accesoViewEstricto(array $level, $noAdmin = false)
     {
-        if (!Session::get('autenticado')) {
-            return false;
+        if (!Session::get('autenticado')) return false;
+
+        if ($noAdmin == false && Session::get('level') == 'admin') {
+            return true;
         }
 
-        if ($noAdmin == false) {
-            if (Session::get('level') == 'admin') {
-                return true;
-            }
-        }
-
-        if (count($level)) {
-            if (in_array(Session::get('level'), $level)) {
-                return true;
-            }
+        if (count($level) && in_array(Session::get('level'), $level)) {
+            return true;
         }
 
         return false;
     }
 
+    // ============================
+    // Tiempo de sesión (SEGUNDOS)
+    // ============================
     public static function tiempo()
     {
-        if (!Session::get('tiempo') || !defined('SESSION_TIME')) {
-            throw new Exception('No se ha definido el tiempo de sesion');
+        if (!defined('SESSION_TIME')) {
+            throw new Exception('No se ha definido SESSION_TIME');
         }
-        //quitar si es tiempo indefinido
-        if (SESSION_TIME == 0) {
+
+        // 0 = sesión indefinida
+        if ((int)SESSION_TIME === 0) {
             return;
         }
 
-        if (time() - Session::get('tiempo') > (SESSION_TIME * 60)) {
+        $t = (int)(Session::get('tiempo') ?? 0);
+
+        // Si no hay tiempo, inicializa
+        if ($t <= 0) {
+            Session::set('tiempo', time());
+            return;
+        }
+
+        // ✅ AHORA SESSION_TIME es en segundos (sin *60)
+        if ((time() - $t) > (int)SESSION_TIME) {
             Session::destroy();
             header('location:' . BASE_URL . 'error/access/8080');
-        } else {
-            Session::set('tiempo', time());
+            exit;
         }
+
+        // refresca actividad
+        Session::set('tiempo', time());
     }
 }

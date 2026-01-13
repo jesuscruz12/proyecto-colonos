@@ -1,0 +1,299 @@
+<?php
+  $mesIni = date('Y-m-01');
+  $mesFin = date('Y-m-t');
+?>
+<main class="app-main">
+  <div class="app-content-header">
+    <div class="container-fluid">
+      <div class="row align-items-center">
+        <div class="col-sm-6"><h3 class="mb-0">Dashboard</h3></div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-end mb-0">
+            <li class="breadcrumb-item"><a href="<?= BASE_URL; ?>">Home</a></li>
+            <li class="breadcrumb-item active">Dashboard</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="container-fluid">
+    <div class="row g-3 align-items-center justify-content-start justify-content-lg-end">
+      <div class="col-12 col-lg">
+        <div class="alert alert-light border d-flex align-items-center mb-0">
+          <i class="bi bi-info-circle me-2"></i>
+          <span class="small">
+            El rango afecta <b>KPIs</b>, <b>gráficas</b> y <b>mapa</b>. Por defecto se muestra el mes actual (fecha del accidente).
+          </span>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-auto">
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+          <input type="date" class="form-control" id="kpi_desde" value="<?= $mesIni; ?>">
+        </div>
+      </div>
+
+      <div class="col-12 col-md-auto">
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+          <input type="date" class="form-control" id="kpi_hasta" value="<?= $mesFin; ?>">
+        </div>
+      </div>
+
+      <div class="col-12 col-md-auto d-flex gap-2">
+        <button id="btn_kpi_aplicar" class="btn btn-primary">
+          <i class="bi bi-check2-circle me-1"></i> Aplicar
+        </button>
+
+        <!-- Exportar -->
+        <div class="btn-group">
+          <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+            Exportar
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="#" id="btn_export_png">PNG (gráficas/tablero)</a></li>
+            <li><a class="dropdown-item" href="#" id="btn_export_pdf">PDF (tablero)</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenido -->
+  <div class="app-content">
+    <div class="container-fluid">
+
+      <!-- FILA ESTATUS PRINCIPALES -->
+      <div class="row g-3 mt-2">
+        <?php
+        $kpis = [
+          ['id'=>'kpi_abiertos','color'=>'primary','icon'=>'unlock-fill','label'=>'ABIERTOS'],
+          ['id'=>'kpi_asignado','color'=>'success','icon'=>'person-check-fill','label'=>'ASIGNADO'],
+          ['id'=>'kpi_enruta','color'=>'warning','icon'=>'truck','label'=>'EN RUTA'],
+          ['id'=>'kpi_ensitio','color'=>'info','icon'=>'geo-alt-fill','label'=>'EN SITIO'],
+          ['id'=>'kpi_enproceso','color'=>'secondary','icon'=>'hourglass-split','label'=>'EN PROCESO'],
+          ['id'=>'kpi_cerrados','color'=>'dark','icon'=>'lock-fill','label'=>'CERRADOS'],
+          ['id'=>'kpi_cancelados','color'=>'danger','icon'=>'x-octagon-fill','label'=>'CANCELADOS'],
+        ];
+        foreach($kpis as $k): ?>
+          <div class="col-6 col-md-4 col-xl-2">
+            <div class="small-box text-bg-<?= $k['color'] ?> shadow-sm kpi-box">
+              <div class="inner">
+                <h3 id="<?= $k['id'] ?>">—</h3>
+                <p class="mb-0 text-uppercase small"><?= $k['label'] ?></p>
+              </div>
+              <i class="small-box-icon bi bi-<?= $k['icon'] ?>"></i>
+              <a href="<?= BASE_URL; ?>admin/accidentes" class="small-box-footer text-white-50">
+                Ver detalle <i class="bi bi-link-45deg"></i>
+              </a>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+
+      <!-- FILA SEVERIDAD + TOTAL -->
+      <div class="row g-3 mt-1">
+        <div class="col-12 col-sm-6 col-xl-3">
+          <div class="info-box shadow-sm h-100">
+            <span class="info-box-icon bg-success">
+              <i class="bi bi-shield-check"></i>
+            </span>
+            <div class="info-box-content">
+              <span class="info-box-text text-muted text-uppercase small">Severidad menor</span>
+              <span class="info-box-number fs-5 fw-semibold" id="kpi_menor">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+          <div class="info-box shadow-sm h-100">
+            <span class="info-box-icon bg-warning">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+            </span>
+            <div class="info-box-content">
+              <span class="info-box-text text-muted text-uppercase small">Severidad moderada</span>
+              <span class="info-box-number fs-5 fw-semibold" id="kpi_moderado">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+          <div class="info-box shadow-sm h-100">
+            <span class="info-box-icon bg-danger">
+              <i class="bi bi-hospital"></i>
+            </span>
+            <div class="info-box-content">
+              <span class="info-box-text text-muted text-uppercase small">Severidad grave</span>
+              <span class="info-box-number fs-5 fw-semibold" id="kpi_grave">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+          <div class="info-box shadow-sm h-100">
+            <span class="info-box-icon bg-secondary">
+              <i class="bi bi-123"></i>
+            </span>
+            <div class="info-box-content">
+              <span class="info-box-text text-muted text-uppercase small">Total en rango</span>
+              <span class="info-box-number fs-5 fw-semibold" id="kpi_total">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILA RESUMEN RÁPIDO (HOY / ÚLTIMOS 7 DÍAS) -->
+      <div class="row g-3 mt-1">
+        <div class="col-12 col-sm-6 col-xl-3">
+          <div class="info-box shadow-sm h-100">
+            <span class="info-box-icon bg-light text-primary border">
+              <i class="bi bi-calendar-day"></i>
+            </span>
+            <div class="info-box-content">
+              <span class="info-box-text text-muted text-uppercase small">Accidentes hoy</span>
+              <span class="info-box-number fs-5 fw-semibold" id="kpi_hoy">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+          <div class="info-box shadow-sm h-100">
+            <span class="info-box-icon bg-light text-primary border">
+              <i class="bi bi-calendar-week"></i>
+            </span>
+            <div class="info-box-content">
+              <span class="info-box-text text-muted text-uppercase small">Últimos 7 días</span>
+              <span class="info-box-number fs-5 fw-semibold" id="kpi_ult7">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- espacio libre para futuros KPIs (por entidad, por municipio, etc.) -->
+      </div>
+
+      <!-- FILA GRÁFICAS + MAPA -->
+      <div class="row g-3 mt-1 align-items-stretch">
+        <div class="col-12 col-xl-8">
+          <div class="card h-100">
+            <div class="card-header d-flex align-items-center">
+              <h3 class="card-title mb-0">
+                <i class="bi bi-graph-up-arrow me-1"></i> Accidentes por día
+              </h3>
+              <div class="ms-auto d-flex align-items-center gap-2">
+                <label for="sel_dias" class="mb-0 small text-muted">Rango:</label>
+                <select id="sel_dias" class="form-select form-select-sm" style="width:auto;">
+                  <option value="7">7 días</option>
+                  <option value="14" selected>14 días</option>
+                  <option value="30">30 días</option>
+                  <option value="60">60 días</option>
+                </select>
+                <button id="btn_refrescar" class="btn btn-sm btn-outline-primary">
+                  <i class="bi bi-arrow-repeat me-1"></i> Refrescar
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="chart_accidentes" style="min-height:340px;"></div>
+              <div class="text-muted small mt-2">
+                Serie basada en <code>fecha</code> (día del accidente).
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mapa México: presentación profesional -->
+        <div class="col-12 col-xl-4">
+          <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white border-0 d-flex align-items-center justify-content-between">
+              <h3 class="card-title mb-0 text-primary fw-semibold">
+                <i class="bi bi-geo-alt-fill me-1"></i> Distribución
+              </h3>
+              <small class="text-muted me-1">Accidentes georreferenciados</small>
+            </div>
+
+            <div class="card-body p-2">
+              <div id="world-map" class="map-clean border rounded-3 mb-2"></div>
+
+              <!-- Top estados (usa los datos de indicadoresModel::mapa) -->
+              <div class="px-1">
+                <div class="d-flex justify-content-between align-items-center small text-muted mb-1">
+                  <span>Top estados</span>
+                  <span id="map-legend">Total: —</span>
+                </div>
+                <ol id="map-top" class="small mb-0 ps-3"></ol>
+              </div>
+            </div>
+
+            <div class="card-footer bg-transparent border-0 text-center small text-muted py-2">
+              Fuente: Coordenadas capturadas por oficiales de tránsito
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<style>
+  .small-box {
+    box-shadow: var(--bs-box-shadow-sm);
+    position: relative;
+    overflow: hidden;
+    border-radius: .75rem;
+  }
+  .small-box .small-box-icon {
+    font-size: 2rem;
+    opacity: .35;
+  }
+  .small-box .inner h3 {
+    font-weight: 700;
+  }
+
+  .info-box {
+    border-radius: .75rem;
+  }
+  .info-box-icon {
+    border-radius: .75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+  }
+
+  /* === Estilo limpio y elegante del mapa === */
+  #world-map.map-clean {
+    height: 360px;
+    width: 100%;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: .75rem;
+    overflow: hidden;
+    background: #f8fafc;
+    box-shadow: inset 0 0 8px rgba(0,0,0,0.05);
+  }
+
+  #world-map.map-clean .leaflet-container {
+    background: #f8fafc;
+  }
+
+  /* Controles Leaflet */
+  .leaflet-control-zoom {
+    border: none !important;
+    border-radius: .5rem !important;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+
+  /* Tooltip del mapa */
+  .leaflet-tooltip {
+    background-color: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    border: none;
+    border-radius: .5rem;
+    padding: 4px 8px;
+    font-size: 0.75rem;
+  }
+</style>

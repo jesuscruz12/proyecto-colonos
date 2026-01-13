@@ -1,0 +1,154 @@
+<?php
+// C:\xampp\htdocs\qacrmtaktik\modules\admin\views\partes\index.phtml
+?>
+<main class="app-main">
+  <div class="app-content-header border-bottom pb-2">
+    <div class="container-fluid d-flex align-items-start align-items-md-center justify-content-between gap-2 flex-wrap">
+      <div>
+        <h3 class="mb-0">
+          <i class="bi bi-tag text-primary"></i>
+          Partes
+        </h3>
+        <div class="text-muted small">Catálogo de partes por empresa.</div>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-primary" id="btn_new">
+          <i class="bi bi-plus-lg me-1"></i> Nueva parte
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-content pt-3">
+    <div class="container-fluid">
+
+      <!-- Filtros -->
+      <div class="card shadow-sm border-0 mb-3">
+        <div class="card-header bg-white d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div class="fw-semibold">Filtros</div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary" id="btn_limpiar">
+              <i class="bi bi-eraser me-1"></i>Limpiar
+            </button>
+            <button class="btn btn-sm btn-primary" id="btn_filtrar">
+              <i class="bi bi-funnel me-1"></i>Aplicar
+            </button>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="row g-2">
+            <div class="col-12 col-md-3">
+              <label class="form-label small mb-1">Activo</label>
+              <select class="form-select form-select-sm" id="f_activo">
+                <option value="">Todos</option>
+                <option value="1">Sí</option>
+                <option value="0">No</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-5">
+              <label class="form-label small mb-1">Cliente</label>
+              <select class="form-select form-select-sm" id="f_cliente_id">
+                <option value="">Todos</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla -->
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white">Listado</div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle w-100" id="tbl">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Número</th>
+                  <th>Descripción</th>
+                  <th>Cliente</th>
+                  <th>Material</th>
+                  <th>Unidad</th>
+                  <th>Activo</th>
+                  <th>Creado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="small text-muted mt-2">Tip: usa búsqueda global para encontrar por número/desc/material.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- Modal Parte -->
+<div class="modal fade" id="modal_parte" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="parte_title">Nueva parte</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body">
+        <form id="frm_parte" class="needs-validation" novalidate>
+          <input type="hidden" name="id" id="parte_id">
+
+          <div class="row g-2">
+            <div class="col-12 col-md-4">
+              <label class="form-label">Número <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" name="numero" id="parte_numero" maxlength="80" required>
+              <div class="invalid-feedback">Número requerido.</div>
+            </div>
+
+            <div class="col-12 col-md-8">
+              <label class="form-label">Cliente</label>
+              <select class="form-select" name="cliente_id" id="parte_cliente">
+                <option value="">— Sin cliente —</option>
+              </select>
+              <div class="form-text">Opcional. Si se captura, debe ser un cliente activo de la empresa.</div>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Descripción</label>
+              <input type="text" class="form-control" name="descripcion" id="parte_descripcion" maxlength="255" placeholder="Opcional">
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label class="form-label">Material</label>
+              <input type="text" class="form-control" name="material" id="parte_material" maxlength="120" placeholder="Opcional">
+            </div>
+
+            <div class="col-12 col-md-3">
+              <label class="form-label">Unidad</label>
+              <input type="text" class="form-control" name="unidad" id="parte_unidad" maxlength="20" value="pza">
+              <div class="form-text">Ej: pza, kg, m, hr.</div>
+            </div>
+
+            <div class="col-12 col-md-3">
+              <label class="form-label">Activo</label>
+              <select class="form-select" name="activo" id="parte_activo">
+                <option value="1">sí</option>
+                <option value="0">no</option>
+              </select>
+            </div>
+          </div>
+
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button class="btn btn-primary" id="btn_save">
+          <i class="bi bi-save me-1"></i> Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
