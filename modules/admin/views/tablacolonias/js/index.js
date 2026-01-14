@@ -20,54 +20,126 @@
     dt = $('#tbl').DataTable({
       serverSide: true,
       processing: true,
-      ajax: API.list(),
+      scrollX: true,
+      autoWidth: false,
+
+      /* ===== FILTROS PERSONALIZADOS ===== */
+      ajax: {
+        url: API.list(),
+        data: function (d) {
+          d.f_q      = document.getElementById('f_q')?.value || '';   // 👈 Clave / Nombre
+          d.f_estado = document.getElementById('f_estado')?.value || '';
+          d.f_ciudad = document.getElementById('f_ciudad')?.value || '';
+          d.f_activo = document.getElementById('f_activo')?.value || '';
+        }
+      },
+
       order: [[0, 'desc']],
       columns: [
+
+        /* ===== EXISTENTES ===== */
         { data: 'id' },
         { data: 'clave' },
         { data: 'nombre' },
+
+        /* ===== COLOR ===== */
+        {
+          data: 'primary_color',
+          className: 'text-center',
+          orderable: false,
+          render: v => `
+            <span
+              title="${v}"
+              style="
+                display:inline-block;
+                width:22px;
+                height:22px;
+                border-radius:4px;
+                background:${v || '#0A84FF'};
+                border:1px solid #ccc;
+              ">
+            </span>
+          `
+        },
+        /* ===== NUEVOS (AGREGADOS) ===== */
+        { data: 'razon_social', defaultContent: '' },
+        { data: 'rfc', defaultContent: '' },
+        { data: 'cp', defaultContent: '' },
+
         { data: 'ciudad' },
         { data: 'estado' },
+
+        /* ===== CONTACTOS ===== */
+        { data: 'contacto_nombre', defaultContent: '' },
+        { data: 'contacto_email', defaultContent: '' },
+        { data: 'contacto_tel', defaultContent: '' },
+
+        /* ===== ACTIVO ===== */
         {
           data: 'activo',
-          render: v => v == 1
-            ? '<span class="badge bg-success">Sí</span>'
-            : '<span class="badge bg-secondary">No</span>'
+          className: 'text-center',
+          render: v =>
+            v == 1
+              ? '<span class="badge bg-success">Sí</span>'
+              : '<span class="badge bg-secondary">No</span>'
         },
+
+        /* ===== ACCIONES ===== */
         {
           data: null,
           orderable: false,
-          className: 'text-end',
+          className: 'text-end text-nowrap',
           render: r => `
-            <button class="btn btn-sm btn-outline-primary me-1" data-id="${r.id}" data-e="e">
-              <i class="bi bi-pencil"></i>
-            </button>
-            <button class="btn btn-sm btn-outline-danger" data-id="${r.id}" data-e="d">
-              <i class="bi bi-trash"></i>
-            </button>
+            <div class="d-inline-flex gap-1">
+              <button class="btn btn-sm btn-outline-primary" data-id="${r.id}" data-e="e">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" data-id="${r.id}" data-e="d">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
           `
         }
       ]
     });
 
     /* =========================
-       Nuevo
+       APLICAR FILTROS
+    ========================= */
+    document.getElementById('btn_filtrar')?.addEventListener('click', () => {
+      dt.ajax.reload();
+    });
+
+    /* =========================
+       LIMPIAR FILTROS
+    ========================= */
+    document.getElementById('btn_limpiar')?.addEventListener('click', () => {
+      document.getElementById('f_q').value  = '';
+      document.getElementById('f_estado').value = '';
+      document.getElementById('f_ciudad').value = '';
+      document.getElementById('f_activo').value = '';
+      dt.ajax.reload();
+    });
+
+    /* =========================
+       NUEVO
     ========================= */
     document.getElementById('btn_new').addEventListener('click', () => {
-      document.getElementById('frm').reset();
-      document.querySelector('[name="id"]').value = '';
+      const form = document.getElementById('frm');
+      form.reset();
+      form.classList.remove('was-validated');
+      form.querySelector('[name="id"]').value = '';
       modal.show();
     });
 
     /* =========================
-       Editar / Eliminar
+       EDITAR / ELIMINAR
     ========================= */
     $('#tbl').on('click', 'button', async e => {
       const btn = e.currentTarget;
       const id = btn.dataset.id;
       const ev = btn.dataset.e;
 
-      /* ===== EDITAR ===== */
       if (ev === 'e') {
         const r = await fetch(API.get(id)).then(r => r.json());
         if (!r.ok) {
@@ -83,7 +155,6 @@
         modal.show();
       }
 
-      /* ===== ELIMINAR ===== */
       if (ev === 'd') {
         if (!confirm('¿Eliminar colonia?')) return;
 
@@ -96,7 +167,7 @@
     });
 
     /* =========================
-       Guardar
+       GUARDAR
     ========================= */
     document.getElementById('btn_save').addEventListener('click', async () => {
       const form = document.getElementById('frm');

@@ -232,7 +232,7 @@ $ver = taktik_ver();
             <a href="<?= BASE_URL; ?>admin/tablacolonias"
                class="nav-link <?= $isActive('admin/tablacolonias') ? 'active' : ''; ?>">
               <i class="nav-icon bi bi-clipboard-check"></i>
-              <p>Colonias</p>
+              <p>Tabla Colonias</p>
             </a>
           </li>
         <?php endif; ?>
